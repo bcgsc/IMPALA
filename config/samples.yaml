@@ -1,0 +1,9 @@
+# sample name must match the sample ID on the RPKM matrix
+samples:
+    HTMCP.03.06.02058:
+        dna:
+            /projects/hpv_nanopore_prj/htmcp/illumina/WGS/A37263_hg38_no_alt_hpv_all.sorted.bam
+        rna:
+            /projects/hpv_nanopore_prj/htmcp/illumina/rnaseq/A37722_hg38_no_alt_hpv_all.sorted.bam
+        phase:
+            /projects/hpv_nanopore_prj2/htmcp/lims_fnn/D77540_D81468/clair_3_0_1/clair_3_0_1_D77540_D81468/phased_merge_output.vcf.gz

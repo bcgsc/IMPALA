@@ -1,0 +1,22 @@
+## genome
+genome:
+    hg19:
+        "/gsc/resources/Homo_sapiens_genomes/hg19a/genome/fasta/hg19a.fa"
+    hg38:
+        "/gsc/resources/Homo_sapiens_genomes/hg38_no_alt/genome/fasta/hg38_no_alt.fa"
+    hg38_no_alt_TCGA_HTMCP_HPVs:
+        "/gsc/resources/Homo_sapiens_genomes/hg38_no_alt_TCGA_HTMCP_HPVs/genome/fasta/hg38_no_alt_TCGA_HTMCP_HPVs.fa"
+array_positions:
+    hg19:
+        "resources/snp_arrays/hg19/SNP_array_positions.txt"
+    hg38:
+        "resources/snp_arrays/hg38/SNP_array_positions.txt"
+    hg38_no_alt_TCGA_HTMCP_HPVs:
+        "resources/snp_arrays/hg38/SNP_array_positions.txt"
+annotation:
+    hg19:
+        "/gsc/resources/annotation/Homo_sapiens.GRCh37.87.gtf"
+    hg38:
+        "/gsc/resources/annotation/Homo_sapiens.GRCh38.100.gtf"
+    hg38_no_alt_TCGA_HTMCP_HPVs:
+        "/gsc/resources/Homo_sapiens_genomes/hg38_no_alt_TCGA_HTMCP_HPVs/annotations/ensembl100_gsc_v1/Homo_sapiens.GRCh38.100.remapped_HPVs_added.gtf"

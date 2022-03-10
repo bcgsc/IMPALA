@@ -1,0 +1,122 @@
+## Load config values
+configfile: "config/defaults.yaml"
+configfile: "config/samples.yaml"
+configfile: "config/parameters.yaml"
+
+# path to the reference genome fasta
+genome_path = config["genome"][config["genome_name"]]
+
+# path to the RPKM matrix
+rpkm_path = config["matrix"]
+
+# samples
+samples_dict = config["samples"]
+sample_ids = samples_dict.keys()
+
+### -------------------------------------------------------------------
+### Target rule
+### -------------------------------------------------------------------
+rule all:
+    input:
+	    expand("{sample}/mBASED",sample=sample_ids)
+
+### -------------------------------------------------------------------
+### Call and filter the DNA SNVs
+### -------------------------------------------------------------------
+
+rule dna_snv_calling:
+    input:
+        bam = lambda w: config["samples"][w.sample]["dna"],
+        ref = genome_path
+    output:
+        "{sample}/StrelkaDNA/results/variants/genome.S1.vcf.gz"
+    threads: 20
+    shell:
+        """
+        /gsc/software/linux-x86_64-centos7/strelka-2.9.2/bin/configureStrelkaGermlineWorkflow.py --bam={input.bam} --referenceFasta={input.ref} --rna --runDir={wildcards.sample}/StrelkaDNA
+        {wildcards.sample}/StrelkaDNA/runWorkflow.py -m local -j {threads}
+        """
+
+rule dna_snv_filt:
+    input:
+        vcf = "{sample}/StrelkaDNA/results/variants/genome.S1.vcf.gz"
+    output:
+        "{sample}/dna.het.pass.snps.vcf.gz"
+    shell:
+        "zcat {input.vcf} | grep -E '(PASS|#)' | grep -E '(0/1|#)' | awk '/^#/||length($4)==1 && length($5)==1' | /gsc/software/linux-x86_64-centos7/tabix-0.2.6/bin/bgzip > {output}"
+
+rule dna_snv_index:
+    input:
+        vcf="{sample}/dna.het.pass.snps.vcf.gz"
+    output:
+        "{sample}/dna.het.pass.snps.vcf.gz.tbi"
+    shell:
+        "tabix {input.vcf}"
+
+### -------------------------------------------------------------------
+### Call and filter the RNA SNVs
+### -------------------------------------------------------------------
+
+rule rna_snv_calling:
+    input:
+        bam = lambda w: config["samples"][w.sample]["rna"],
+        vcf = "{sample}/dna.het.pass.snps.vcf.gz",
+        ref = genome_path
+    output:
+        "{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz"
+    threads: 20
+    shell:
+        """
+        /gsc/software/linux-x86_64-centos7/strelka-2.9.2/bin/configureStrelkaGermlineWorkflow.py --bam={input.bam} --referenceFasta={input.ref} --forcedGT={input.vcf} --rna --runDir={wildcards.sample}/StrelkaRNA
+        {wildcards.sample}/StrelkaRNA/runWorkflow.py -m local -j {threads}
+        """
+
+rule pass_filt:
+    input:
+        vcf="{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz"
+    output:
+        "{sample}/rna.forceGT.pass.vcf.gz"
+    shell:
+        "zcat {input.vcf} | grep -E '(PASS|#)' | bgzip > {output}"
+
+rule rna_snv_index:
+    input:
+        vcf = "{sample}/rna.forceGT.pass.vcf.gz"
+    output:
+        "{sample}/rna.forceGT.pass.vcf.gz.tbi"
+    shell:
+        "tabix {input.vcf}"
+
+rule intersect:
+    input:
+        vcf1 = "{sample}/dna.het.pass.snps.vcf.gz",
+        vcf2 = "{sample}/rna.forceGT.pass.vcf.gz"
+    output:
+        "{sample}/rna.isec.dna.snps.vcf"
+    shell:
+        """
+        bcftools isec {input.vcf2} {input.vcf1} -p {wildcards.sample}/isec -n =2 -w 1
+        mv {wildcards.sample}/isec/0000.vcf {output}
+        """
+
+rule intersect_gz:
+    input:
+        "{sample}/rna.isec.dna.snps.vcf"
+    output:
+        "{sample}/rna.isec.dna.snps.vcf.gz"
+    shell:
+        "bgzip {input}"
+
+### -------------------------------------------------------------------
+### Run MBASED
+### -------------------------------------------------------------------
+
+rule mbased:
+    input:
+        phase = lambda w: config["samples"][w.sample]["phase"],
+        vcf = "{sample}/rna.isec.dna.snps.vcf.gz",
+        rpkm = rpkm_path
+    output:
+        directory("{sample}/mBASED")
+    shell:
+        "scripts/mbased.R --phase={input.phase} --rna={input.vcf} --sample={wildcards.sample} --rpkm={input.rpkm} --min=1 --outdir={output}"

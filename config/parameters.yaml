@@ -1,0 +1,12 @@
+### Genome version considerations
+
+# genome_name should match bams
+genome_name: "hg38_no_alt_TCGA_HTMCP_HPVs"
+
+# RPKM matrix of the samples
+matrix: "/projects/vporter_prj/projects/cxca_hiv_cohort/rawdata/rna-seq/NCI_ensembl69_stranded_RPKM_matrix_123samples_HUGOnoDups.txt"
+
+### Defaults that can be left alone safely
+
+output_dir: "ase-out"
+temp_dir:

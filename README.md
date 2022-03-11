@@ -4,7 +4,13 @@ This workflow outputs the allele-specific expression using short-read RNA-seq an
 
 ### How to run
 Clone the repository:
-```git clone https://svn.bcgsc.ca/bitbucket/scm/marra/vporter-allelespecificexpression.git```
+
+```
+git clone https://svn.bcgsc.ca/bitbucket/scm/marra/vporter-allelespecificexpression.git
+```
 
 Right now conda environments are used, but it would be good to eventually change this to docker containers. You can choose the number of max threads to use with `-c`. This is the command to run:
-```snakemake --use-conda -c 30```
+
+```
+snakemake --use-conda -c 30
+```

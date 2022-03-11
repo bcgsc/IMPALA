@@ -30,10 +30,11 @@ rule dna_snv_calling:
         ref = genome_path
     output:
         "output/{sample}/StrelkaDNA/results/variants/genome.S1.vcf.gz"
+    conda: "config/strelka.yaml"
     threads: 20
     shell:
         """
-        /gsc/software/linux-x86_64-centos7/strelka-2.9.2/bin/configureStrelkaGermlineWorkflow.py --bam={input.bam} --referenceFasta={input.ref} --rna --runDir=output/{wildcards.sample}/StrelkaDNA
+        configureStrelkaGermlineWorkflow.py --bam={input.bam} --referenceFasta={input.ref} --rna --runDir=output/{wildcards.sample}/StrelkaDNA
         output/{wildcards.sample}/StrelkaDNA/runWorkflow.py -m local -j {threads}
         """
 
@@ -42,6 +43,7 @@ rule dna_snv_filt:
         vcf = "output/{sample}/StrelkaDNA/results/variants/genome.S1.vcf.gz"
     output:
         "output/{sample}/dna.het.pass.snps.vcf.gz"
+    conda: "config/ase-env.yaml"
     shell:
         "zcat {input.vcf} | grep -E '(PASS|#)' | grep -E '(0/1|#)' | awk '/^#/||length($4)==1 && length($5)==1' | bgzip > {output}"
 
@@ -50,6 +52,7 @@ rule dna_snv_index:
         vcf="output/{sample}/dna.het.pass.snps.vcf.gz"
     output:
         "output/{sample}/dna.het.pass.snps.vcf.gz.tbi"
+    conda: "config/ase-env.yaml"
     shell:
         "tabix {input.vcf}"
 
@@ -64,10 +67,11 @@ rule rna_snv_calling:
         ref = genome_path
     output:
         "output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz"
+    conda: "config/strelka.yaml"
     threads: 20
     shell:
         """
-        /gsc/software/linux-x86_64-centos7/strelka-2.9.2/bin/configureStrelkaGermlineWorkflow.py --bam={input.bam} --referenceFasta={input.ref} --forcedGT={input.vcf} --rna --runDir=output/{wildcards.sample}/StrelkaRNA
+        configureStrelkaGermlineWorkflow.py --bam={input.bam} --referenceFasta={input.ref} --forcedGT={input.vcf} --rna --runDir=output/{wildcards.sample}/StrelkaRNA
         output/{wildcards.sample}/StrelkaRNA/runWorkflow.py -m local -j {threads}
         """
 
@@ -76,6 +80,7 @@ rule pass_filt:
         vcf="output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz"
     output:
         "output/{sample}/rna.forceGT.pass.vcf.gz"
+    conda: "config/ase-env.yaml"
     shell:
         "zcat {input.vcf} | grep -E '(PASS|#)' | bgzip > {output}"
 
@@ -84,6 +89,7 @@ rule rna_snv_index:
         vcf = "output/{sample}/rna.forceGT.pass.vcf.gz"
     output:
         "output/{sample}/rna.forceGT.pass.vcf.gz.tbi"
+    conda: "config/ase-env.yaml"
     shell:
         "tabix {input.vcf}"
 
@@ -93,6 +99,7 @@ rule intersect:
         vcf2 = "output/{sample}/rna.forceGT.pass.vcf.gz"
     output:
         "output/{sample}/rna.isec.dna.snps.vcf"
+    conda: "config/ase-env.yaml"
     shell:
         """
         bcftools isec {input.vcf2} {input.vcf1} -p output/{wildcards.sample}/isec -n =2 -w 1
@@ -104,6 +111,7 @@ rule intersect_gz:
         "output/{sample}/rna.isec.dna.snps.vcf"
     output:
         "output/{sample}/rna.isec.dna.snps.vcf.gz"
+    conda: "config/ase-env.yaml"
     shell:
         "bgzip {input}"
 

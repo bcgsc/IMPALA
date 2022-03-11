@@ -49,7 +49,7 @@ rule dna_snv_filt:
 
 rule dna_snv_index:
     input:
-        vcf="output/{sample}/dna.het.pass.snps.vcf.gz"
+        vcf = "output/{sample}/dna.het.pass.snps.vcf.gz"
     output:
         "output/{sample}/dna.het.pass.snps.vcf.gz.tbi"
     conda: "config/ase-env.yaml"
@@ -64,7 +64,8 @@ rule rna_snv_calling:
     input:
         bam = lambda w: config["samples"][w.sample]["rna"],
         vcf = "output/{sample}/dna.het.pass.snps.vcf.gz",
-        ref = genome_path
+        ref = genome_path,
+        index = "output/{sample}/dna.het.pass.snps.vcf.gz.tbi"
     output:
         "output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz"
     conda: "config/strelka.yaml"
@@ -96,7 +97,8 @@ rule rna_snv_index:
 rule intersect:
     input:
         vcf1 = "output/{sample}/dna.het.pass.snps.vcf.gz",
-        vcf2 = "output/{sample}/rna.forceGT.pass.vcf.gz"
+        vcf2 = "output/{sample}/rna.forceGT.pass.vcf.gz",
+        index = "output/{sample}/rna.forceGT.pass.vcf.gz.tbi"
     output:
         "output/{sample}/rna.isec.dna.snps.vcf"
     conda: "config/ase-env.yaml"

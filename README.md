@@ -31,5 +31,5 @@ snakemake --use-conda -c 30
 All of the outputs will be found in the `output/{sample}` directory, but the main outputs of interest will be in `output/{sample}/mbased`. The outputs include:
 1. The tabular results of the output `MBASED_expr_gene_results.txt`
 2. The rds object of the MBASED raw output `MBASEDresults.rds`
-3. The rds object of the MBASED gene output simplified dataframe `MBASED_expr_gene_results.txt`
+3. The rds object of the MBASED gene output simplified dataframe `MBASED_expr_gene_results.rds`
 4. Three descriptive figures of the results: `aseGenesBar.pdf`, `aseGenesDot.pdf`, `chromPlot.pdf` 

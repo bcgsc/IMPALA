@@ -11,6 +11,7 @@ git clone https://svn.bcgsc.ca/bitbucket/scm/marra/vporter-allelespecificexpress
 
 ### Running samples
 1. **Edit the config files** <br />
+
 parameters.yaml: <br />
 - Choose a genome to use (hg38/hg19/hg38_no_alt_TCGA_HTMCP_HPVs)
 - Specify the path to the RPKM matrix that contains the sample (can include multiple samples but sample id must be in the column names)

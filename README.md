@@ -45,7 +45,7 @@ The `MBASED_expr_gene_results.txt` output will have the main results included. H
 | gene_biotype         | The type of gene (protein_coding currently selected)                  | 
 | gene_band            | chromosome band                                                       | 
 | RPKM                 | Expression level                                                      | 
-| allele1IsMajor       | T/F is allele 1 is the major allele (allele 1 = HP1)                  | 
+| allele1IsMajor       | T/F if allele 1 is the major allele (allele 1 = HP1)                  | 
 | majorAlleleFrequency | Major allele frequency                                                | 
 | pValueASE            | p-value output by mBASED                                              | 
 | pValueHeterogeneity  | The heterogeneity of the pvalue between the multiple SNVs in the gene | 

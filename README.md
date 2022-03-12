@@ -33,7 +33,7 @@ All of the outputs will be found in the `output/{sample}` directory, but the mai
 1. The tabular results of the output `MBASED_expr_gene_results.txt`
 2. The rds object of the MBASED raw output `MBASEDresults.rds`
 3. The rds object of the MBASED gene output simplified dataframe `MBASED_expr_gene_results.rds`
-4. Three descriptive figures of the results: `aseGenesBar.pdf`, `aseGenesDot.pdf`, `chromPlot.pdf` 
+4. Four descriptive figures of the results: `aseGenesBar.pdf`, `aseGenesDot.pdf`, `chromPlot.pdf`, `sankeyPlot.html` 
 
 ### Output dataframe description file 
 The `MBASED_expr_gene_results.txt` output will have the main results included. Here is a description of the columns:
@@ -41,7 +41,7 @@ The `MBASED_expr_gene_results.txt` output will have the main results included. H
 
 | Column               | Description                                                           | 
 | :---                 |    :----:                                                             |  
-| gene                 | HUGO gene ID                                                          | 
+| gene                 | HGNC gene symbol                                                      | 
 | gene_biotype         | The type of gene (protein_coding currently selected)                  | 
 | gene_band            | chromosome band                                                       | 
 | RPKM                 | Expression level                                                      | 
@@ -52,3 +52,7 @@ The `MBASED_expr_gene_results.txt` output will have the main results included. H
 | padj                 | Benjamini-Hochberg adjusted pvalue                                    | 
 | significance         | Factorize p-value cut off of 0.05                                     | 
 | MAF                  | Factorize MAF cut off of 0.75                                         | 
+
+### Figure Outputs 
+aseGenesBar.pdf
+![Allele Specific Expression Bar Graph](/projects/hpv_nanopore_prj/htmcp/allelic_imbalance/example_figs/projects/ "ASE Bar Graph")

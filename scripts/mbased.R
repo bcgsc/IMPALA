@@ -21,6 +21,9 @@ suppressMessages(library(biomaRt))
 suppressMessages(library(bedtoolsr))
 suppressMessages(library(RColorBrewer))
 suppressMessages(library(tibble))
+suppressMessages(library(chromPlot))
+suppressMessages(library(networkD3))
+suppressMessages(library(htmlwidgets))
 options(bedtools.path = "/gsc/software/linux-x86_64-centos7/bedtools-2.27.1/bin")
 
 ## ---------------------------------------------------------------------------
@@ -42,14 +45,6 @@ option_list = list(
   make_option(c("-o", "--outdir"), type="character", default = "mbased_output",
               help="Output directory name", metavar="character")
 )
-
-# load in the example samples
-#out <- "/projects/hpv_nanopore_prj/htmcp/allelic_imbalance/snakemake/HTMCP.03.06.02058/mbased"
-#sample <- "HTMCP.03.06.02058"
-#rpkm <- read.delim("/projects/hpv_nanopore_prj/htmcp/allelic_imbalance/snakemake/HTMCP.03.06.02058/RPKM_matrix.txt", header = T, stringsAsFactors = F) 
-#min <- 1
-#rna <- read.delim("/projects/hpv_nanopore_prj/htmcp/allelic_imbalance/snakemake/HTMCP.03.06.02058/rna.isec.dna.snps.vcf.gz", header = F, comment.char = "#", stringsAsFactors = F)
-#wh <- read.delim("/projects/hpv_nanopore_prj/htmcp/allelic_imbalance/snakemake/HTMCP.03.06.02058/whatsHap.vcf", header = F, comment.char = "#", stringsAsFactors = F)
 
 # load in options 
 opt_parser <- OptionParser(option_list=option_list)
@@ -113,10 +108,10 @@ rna_bed <- data.frame(chr = rna$CHROM, start = rna$POS, end = (rna$POS +1), vari
 grch38 <- useMart("ensembl",dataset="hsapiens_gene_ensembl")
 
 # retrieve gene info from biomaRt
-all_genes <- getBM(attributes = c("chromosome_name", "start_position", "end_position","hgnc_symbol", "strand", "band", "gene_biotype"),mart = grch38)
+all_genes_nofilt <- getBM(attributes = c("chromosome_name", "start_position", "end_position","hgnc_symbol", "strand", "band", "gene_biotype"),mart = grch38)
 
 # filter the genes
-all_genes <- all_genes[all_genes$gene_biotype %in% c("lincRNA", "miRNA", "protein_coding"),]
+all_genes <- all_genes_nofilt[all_genes_nofilt$gene_biotype %in% c("lincRNA", "miRNA", "protein_coding"),]
 all_genes <- all_genes[all_genes$chromosome_name %in% c(as.character(1:22), "X"),]
 all_genes <- all_genes[all_genes$hgnc_symbol != "",]
 all_genes$locus <- paste0(all_genes$chromosome_name, all_genes$band)
@@ -393,5 +388,51 @@ bed2 <- data.frame(Chrom = all_genes$V1[all_genes$V4 %in% genes2],
 pdf(paste0(out, "/chromPlot.pdf"), width = 9, height = 8)
 chromPlot(gaps=hg_gap, annot1=bed1, annot2 = bed2, colAnnot1 = "#e74645", colAnnot2 = "grey",  bands=hg_cytoBandIdeo, bin = 1000000, chrSide=c(-1,1,1,1,1,1,1,1))
 dev.off()
+
+####
+#### SANKEY PLOT
+####
+
+# set filters on the RPKM matrix
+rpkm_sample$gene_biotype <- all_genes$V7[match(rpkm_sample$gene, all_genes$V4)]
+rpkm_sample_filt1 <- rpkm_sample[rpkm_sample$gene_biotype %in% c("lincRNA", "miRNA", "protein_coding"),]
+rpkm_sample_filt2 <- rpkm_sample_filt1[rpkm_sample_filt1$HTMCP.03.06.02109 > 1,] 
+
+# get the input values for the plot
+a <- nrow(rpkm_sample_filt1)
+b <- c(nrow(rpkm_sample_filt2),nrow(rpkm_sample_filt1[rpkm_sample_filt1$HTMCP.03.06.02109 <= 1,] ))
+c <- c(nrow(results_filt),nrow(rpkm_sample_filt2[!rpkm_sample_filt2$gene %in% results_filt$gene,]))
+d <- c(nrow(results_filt[results_filt$padj < 0.05 & results_filt$majorAlleleFrequency > 0.75,]),
+       sum(nrow(results_filt[results_filt$padj >= 0.05 & results_filt$majorAlleleFrequency <= 0.75,]),
+       nrow(results_filt[results_filt$padj >= 0.05 & results_filt$majorAlleleFrequency > 0.75,]),
+       nrow(results_filt[results_filt$padj < 0.05 & results_filt$majorAlleleFrequency <= 0.75,])))
+
+# create a connection data frame
+links <- data.frame(
+  source=c(rep(paste0("All Genes (n=", a, ")"), 2), rep(paste0("RPKM > 1 (n=", b[1], ")"), 2), rep(paste0("Phased Genes (n=", c[1], ")"), 2)),
+  target=c(paste0("RPKM > 1 (n=", b[1], ")"), paste0("RPKM <= 1 (n=", b[2], ")"), 
+           paste0("Phased Genes (n=", c[1], ")"), paste0("Unhased Genes (n=", c[2], ")"), 
+           paste0("ASE Genes (n=", d[1], ")"), paste0("Biallelic Genes (n=", d[2], ")")), 
+  value=c(b, c, d)
+)
+
+
+# create a node data frame: it lists every entities involved in the flow
+nodes <- data.frame(
+  name=c(as.character(links$source), 
+         as.character(links$target)) %>% unique()
+)
+
+# Reformat the links
+links$IDsource <- match(links$source, nodes$name)-1 
+links$IDtarget <- match(links$target, nodes$name)-1
+
+# Make the Network
+sankey <- sankeyNetwork(Links = links, Nodes = nodes,
+                   Source = "IDsource", Target = "IDtarget",
+                   Value = "value", NodeID = "name", 
+                   sinksRight=FALSE, fontSize = 18)
+
+saveWidget(sankey, file=paste0(out, "/sankeyPlot.html"))
 
 print("Figures completed")

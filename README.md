@@ -58,19 +58,19 @@ The `MBASED_expr_gene_results.txt` output will have the main results included. H
 ### aseGenesDot
 The `aseGenesDot.pdf` figure shows the MAF and padj for each phased gene. The red dots (MAF > 0.75 & padj < 0.05) are the ASE genes. 
 
-![Allele Specific Expression Bar Graph](example_figures/aseGenesDot.png "ASE Dot Plot")
+<img src="example_figures/aseGenesDot.png" alt="Allele specific expression dot plot" width="500"/>
 
 ### aseGenesBar
 The `aseGenesBar.pdf` figure shows the number of genes that fall into the statistical cut offs across each chromosome. The red variable (MAF > 0.75 & padj < 0.05) are the ASE genes. The remaining genes are coloured by where they fall in the MAF and padj cut-offs. 
 
-![Allele Specific Expression Bar Graph](example_figures/aseGenesBar.png "ASE Bar Graph")
+<img src="example_figures/aseGenesBar.png" alt="Allele Specific Expression Bar Graph" width="800"/>
 
 ### chromPlot
 The `chromPlot.pdf` figure shows the distribution of ASE genes by their genomic location. The ASE genes are in red facing left, while the biallelic genes (all genes that don't make the padj and MAF cut offs) are in grey facing right. 
 
-![Allele Specific Expression Bar Graph](example_figures/chromPlot.png "ASE Chromosome Plot")
+<img src="example_figures/chromPlot.png" alt="Allele Specific Expression Chromosome Plot" width="800"/>
 
 ### sankeyPlot
 The `sankeyPlot.html` shows how many of genes made it through each filtering step. All genes included only the genes labeled as protein coding, lincRNA, or miRNA.  They were filtered by (1) expression level, (2) ablity to be phased, and (3) whether or not they have ASE.
 
-![Allele Specific Expression Bar Graph](example_figures/sankeyPlot.png "ASE Sankey Plot")
+<img src="example_figures/sankeyPlot.png" alt="Allele Specific Expression Sankey Plot" width="600"/>

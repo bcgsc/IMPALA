@@ -6,6 +6,9 @@ configfile: "config/parameters.yaml"
 # path to the reference genome fasta
 genome_path = config["genome"][config["genome_name"]]
 
+# Ensembl 100 genes
+gene_anno = config["annotation"][config["genome_name"]]
+
 # path to the RPKM matrix
 rpkm_path = config["matrix"]
 
@@ -27,14 +30,15 @@ rule all:
 rule dna_snv_calling:
     input:
         bam = lambda w: config["samples"][w.sample]["dna"],
-        ref = genome_path
+        ref = genome_path,
+        bed = gene_anno
     output:
         "output/{sample}/StrelkaDNA/results/variants/genome.S1.vcf.gz"
     conda: "config/strelka.yaml"
     threads: 20
     shell:
         """
-        configureStrelkaGermlineWorkflow.py --bam={input.bam} --referenceFasta={input.ref} --rna --runDir=output/{wildcards.sample}/StrelkaDNA
+        configureStrelkaGermlineWorkflow.py --bam={input.bam} --referenceFasta={input.ref} --callRegions=(input.bed) --rna --runDir=output/{wildcards.sample}/StrelkaDNA
         output/{wildcards.sample}/StrelkaDNA/runWorkflow.py -m local -j {threads}
         """
 
@@ -117,6 +121,16 @@ rule intersect_gz:
     shell:
         "bgzip {input}"
 
+rule intersect_genes:
+    input:
+        vcf = "output/{sample}/rna.isec.dna.snps.vcf.gz",
+        bed = gene_anno
+    output:
+        "output/{sample}/rna.isec.dna.snps.genes.vcf.gz"
+    conda: "config/ase-env.yaml"
+    shell:
+        "bedtools intersect -loj -a {input.vcf} -b {input.bed} | cut -f 1-10,14,16,17 > {output}"
+
 ### -------------------------------------------------------------------
 ### Run MBASED
 ### -------------------------------------------------------------------
@@ -124,7 +138,7 @@ rule intersect_gz:
 rule mbased:
     input:
         phase = lambda w: config["samples"][w.sample]["phase"],
-        vcf = "output/{sample}/rna.isec.dna.snps.vcf.gz",
+        vcf = "output/{sample}/rna.isec.dna.snps.genes.vcf.gz",
         rpkm = rpkm_path
     output:
         directory("output/{sample}/mBASED")

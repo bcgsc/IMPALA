@@ -17,14 +17,11 @@ suppressMessages(library(tidyr))
 suppressMessages(library(MBASED))
 suppressMessages(library(SummarizedExperiment))
 suppressMessages(library(stats))
-suppressMessages(library(biomaRt))
-suppressMessages(library(bedtoolsr))
 suppressMessages(library(RColorBrewer))
 suppressMessages(library(tibble))
 suppressMessages(library(chromPlot))
 suppressMessages(library(networkD3))
 suppressMessages(library(htmlwidgets))
-options(bedtools.path = "/gsc/software/linux-x86_64-centos7/bedtools-2.27.1/bin")
 
 ## ---------------------------------------------------------------------------
 ## LOAD INPUT 
@@ -95,37 +92,14 @@ summarizeASEResults_1s <- function(MBASEDOutput) {
 }
 
 ## ---------------------------------------------------------------------------
-## Intersect RNA SNV Calls and Genes
+## READ IN THE RNA SNV CALLS
 ## ---------------------------------------------------------------------------
 
 # read in the RNA calls
+rna <- read.delim("/projects/vporter_prj/tools/vporter-allelespecificexpression/output/HTMCP.03.06.02058/rna.isec.dna.snps.genes.vcf.gz", header = F, comment.char = "#", stringsAsFactors = F)
 rna <- read.delim(opt$rna, header = F, comment.char = "#", stringsAsFactors = F)
-colnames(rna) <- c("CHROM", "POS", "ID","REF","ALT","QUAL","FILTER","INFO","FORMAT","SAMPLE1") 
+colnames(rna) <- c("CHROM", "POS", "ID","REF","ALT","QUAL","FILTER","INFO","FORMAT","SAMPLE1", "gene", "gene_biotype", "gene_locus") 
 rna$variant <- paste0(rna$CHROM, ":", rna$POS)
-rna_bed <- data.frame(chr = rna$CHROM, start = rna$POS, end = (rna$POS +1), variant = rna$variant)
-
-# load in the biomaRt ensembl database
-grch38 <- useMart("ensembl",dataset="hsapiens_gene_ensembl")
-
-# retrieve gene info from biomaRt
-all_genes_nofilt <- getBM(attributes = c("chromosome_name", "start_position", "end_position","hgnc_symbol", "strand", "band", "gene_biotype"),mart = grch38)
-
-# filter the genes
-all_genes <- all_genes_nofilt[all_genes_nofilt$gene_biotype %in% c("lincRNA", "miRNA", "protein_coding"),]
-all_genes <- all_genes[all_genes$chromosome_name %in% c(as.character(1:22), "X"),]
-all_genes <- all_genes[all_genes$hgnc_symbol != "",]
-all_genes$locus <- paste0(all_genes$chromosome_name, all_genes$band)
-all_genes$chromosome_name <- paste0("chr", all_genes$chromosome_name)
-all_genes <- bedtoolsr::bt.sort(all_genes)
-
-# intersect the RNA SNVs with genes
-rna_genes <- bedtoolsr::bt.intersect(a = rna_bed, b = all_genes, loj = T) %>% 
-  dplyr::select(4,8,11,12)
-
-# add the columns to the rna object
-rna$gene <- rna_genes$V8[match(rna$variant, rna_genes$V4)]
-rna$gene_biotype <- rna_genes$V11[match(rna$variant, rna_genes$V4)]
-rna$gene_locus <- rna_genes$V12[match(rna$variant, rna_genes$V4)]
 
 # remove variants non-overlapping with genes of interest
 rna_filt <- rna[rna$gene != ".",]

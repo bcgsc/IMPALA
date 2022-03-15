@@ -32,6 +32,7 @@ dependencies:
   - configargparse=1.5.3=pyhd8ed1ab_0
   - connection_pool=0.0.3=pyhd3deb0d_0
   - cycler=0.11.0=pyhd8ed1ab_0
+  - dbus=1.13.6=h5008d03_3
   - decorator=5.1.1=pyhd8ed1ab_0
   - defusedxml=0.7.1=pyhd8ed1ab_0
   - dropbox=11.28.0=pyhd8ed1ab_0
@@ -55,6 +56,8 @@ dependencies:
   - giflib=5.2.1=h36c2ea0_2
   - gitdb=4.0.9=pyhd8ed1ab_0
   - gitpython=3.1.27=pyhd8ed1ab_0
+  - glib=2.70.2=h780b84a_4
+  - glib-tools=2.70.2=h780b84a_4
   - google-api-core=2.5.0=pyhd8ed1ab_0
   - google-api-python-client=2.39.0=pyhd8ed1ab_0
   - google-auth=2.6.0=pyh6c4a22f_1
@@ -132,6 +135,7 @@ dependencies:
   - ncurses=6.3=h9c3ff4c_0
   - networkx=2.7.1=pyhd8ed1ab_0
   - oauth2client=4.1.3=py_0
+  - openjdk=11.0.13=h87a67e3_0
   - openjpeg=2.4.0=hb52868f_1
   - openssl=1.1.1l=h7f98852_0
   - packaging=21.3=pyhd8ed1ab_0
@@ -174,6 +178,7 @@ dependencies:
   - smmap=3.0.5=pyh44b312d_0
   - snakemake=7.1.1=hdfd78af_0
   - snakemake-minimal=7.1.1=pyhdfd78af_0
+  - snpeff=5.1=hdfd78af_1
   - sqlite=3.37.0=h9cd32fc_0
   - stone=3.3.1=pyhd8ed1ab_0
   - stopit=1.1.2=py_0

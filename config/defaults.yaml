@@ -11,6 +11,6 @@ annotation:
     hg19:
         "/gsc/resources/annotation/Homo_sapiens.GRCh37.87.gtf"
     hg38:
-        "annotation/biomart_ensembl100_GRCh38.sorted.bed"
+        "annotation/biomart_ensembl100_GRCh38.sorted.bed.gz"
     hg38_no_alt_TCGA_HTMCP_HPVs:
-        "annotation/biomart_ensembl100_GRCh38.sorted.bed"
+        "annotation/biomart_ensembl100_GRCh38.sorted.bed.gz"

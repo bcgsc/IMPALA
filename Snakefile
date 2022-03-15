@@ -38,7 +38,7 @@ rule dna_snv_calling:
     threads: 20
     shell:
         """
-        configureStrelkaGermlineWorkflow.py --bam={input.bam} --referenceFasta={input.ref} --callRegions=(input.bed) --rna --runDir=output/{wildcards.sample}/StrelkaDNA
+        configureStrelkaGermlineWorkflow.py --bam={input.bam} --referenceFasta={input.ref} --callRegions={input.bed} --rna --runDir=output/{wildcards.sample}/StrelkaDNA
         output/{wildcards.sample}/StrelkaDNA/runWorkflow.py -m local -j {threads}
         """
 

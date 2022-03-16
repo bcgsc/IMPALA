@@ -2,7 +2,7 @@
 samples:
     HTMCP.03.06.02058:
         dna:
-            /projects/hpv_nanopore_prj/htmcp/illumina/WGS/A37263_hg38_no_alt_hpv_all.sorted.bam
+            /projects/hpv_nanopore_prj/htmcp/illumina/WGS/A37261_hg38_no_alt_hpv_all.sorted.bam
         rna:
             /projects/hpv_nanopore_prj/htmcp/illumina/rnaseq/A37722_hg38_no_alt_hpv_all.sorted.bam
         phase:

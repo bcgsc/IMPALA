@@ -2,26 +2,19 @@
 .libPaths("/projects/vporter_prj/R/x86_64-centos7-linux-gnu-library/4.0")
 
 ## ---------------------------------------------------------------------------
-## Allelic Imbalance in Expression using MBASED
+## Allelic Imbalance in Expression using MBASED, part 1
 ## Vanessa Porter, Oct. 2021
 ## ---------------------------------------------------------------------------
 
 suppressMessages(library(optparse))
 suppressMessages(library(dplyr))
-suppressMessages(library(ggplot2))
 suppressMessages(library(reshape2))
 suppressMessages(library(prob))
-suppressMessages(library(ggrepel))
-suppressMessages(library(ggsci))
 suppressMessages(library(tidyr))
 suppressMessages(library(MBASED))
 suppressMessages(library(SummarizedExperiment))
 suppressMessages(library(stats))
-suppressMessages(library(RColorBrewer))
 suppressMessages(library(tibble))
-suppressMessages(library(chromPlot))
-suppressMessages(library(networkD3))
-suppressMessages(library(htmlwidgets))
 
 ## ---------------------------------------------------------------------------
 ## LOAD INPUT 
@@ -255,7 +248,7 @@ if (!is.null(opt$phase)){
 
 # save the results 
 saveRDS(results, file=paste0(out, "/MBASEDresults.rds"))
-print("Finished MBASED, beginning figures ...")
+print("Finished MBASED, adding expression ...")
 
 ## ---------------------------------------------------------------------------
 ## ADD THE RPKM AND FILTER THE ASE GENES
@@ -275,8 +268,8 @@ results_filt <- results_filt[complete.cases(results_filt),]
 results_filt$MAF <- as.factor(ifelse(results_filt$majorAlleleFrequency > 0.75, "MAF > 0.75", "MAF < 0.75"))
 
 # add the locus
-results_filt$gene_band <- all_genes$V8[match(results_filt$gene, all_genes$V4)]
-results_filt$gene_biotype <- all_genes$V7[match(results_filt$gene, all_genes$V4)]
+results_filt$gene_band <- rna_filt$gene_locus[match(results_filt$gene, rna_filt$gene)]
+results_filt$gene_biotype <- rna_filt$gene_biotype[match(results_filt$gene, rna_filt$gene)]
 
 # rearrange columns to a logical orger
 results_filt <- results_filt[,c("gene", "gene_biotype", "gene_band", "RPKM", "allele1IsMajor","majorAlleleFrequency", 
@@ -286,127 +279,4 @@ results_filt <- results_filt[,c("gene", "gene_biotype", "gene_band", "RPKM", "al
 # save the data frame as a table
 write.table(results_filt, paste0(out, "/MBASED_expr_gene_results.txt"), quote = F, col.names = T, row.names = F, sep = "\t")
 
-## ---------------------------------------------------------------------------
-## FIGURES
-## ---------------------------------------------------------------------------
-
-### 
-### SET UP THE DATAFRAME
-###
-
-df <- results_filt
-
-# make a colour filter
-df$colour_filt <- ifelse(df$padj < 0.05 & df$majorAlleleFrequency > 0.75, "MAF > 0.75 & padj < 0.05",
-                         ifelse(df$padj > 0.05 & df$majorAlleleFrequency > 0.75, "MAF > 0.75 & padj > 0.05",
-                                ifelse(df$padj > 0.05 & df$majorAlleleFrequency < 0.75, "MAF < 0.75 & padj > 0.05", "MAF < 0.75 & padj < 0.05")))
-
-# add the chromosome
-df$chr <- all_genes$V1[match(df$gene, all_genes$V4)]
-
-# set the factor levels
-df$colour_filt <- factor(df$colour_filt, levels = c("MAF > 0.75 & padj < 0.05", "MAF < 0.75 & padj < 0.05", 
-                                                            "MAF > 0.75 & padj > 0.05", "MAF < 0.75 & padj > 0.05"))
-df$chr <- factor(df$chr, levels = c(paste0("chr", 1:22), "chrX"))
-df <- df[complete.cases(df),]
-
-#### 
-#### DOTPLOT
-####
-
-dotplot <- ggplot(df, aes(x = majorAlleleFrequency, y = padj, colour = colour_filt)) +
-  geom_point(alpha = 0.5, size = 2) +
-  scale_color_manual(values = c("#e74645", "black", "black", "grey")) +
-  theme_bw() + 
-  geom_hline(yintercept = 0.05, linetype = 2) +
-  geom_vline(xintercept = 0.75, linetype = 2) +
-  geom_text(aes(label = paste0(table(colour_filt)["MAF > 0.75 & padj < 0.05"], " ASE genes"), x = 0.9, y = 0.75), size = 4.5, colour = "#e74645") +
-  labs(x = "major allele frequency", y = "adjusted pvalue", colour = NULL) +
-  theme(legend.position = "none", 
-        axis.title = element_text(size = 12, face = "bold", colour = "black"),
-        axis.text = element_text(size = 10, colour = "black"))
-
-ggsave(filename = paste0(out, "/aseGenesDot.pdf"), plot = dotplot, width = 5, height = 4, units = "in")
-
-####
-#### BARPLOT
-####
-
-barplot <- ggplot(df, aes(x = chr, fill = colour_filt)) +
-  geom_bar() +
-  scale_fill_manual(values = rev(c("#e0f0ea","#574f7d", "#95adbe", "#e74645"))) +
-  theme_bw() +
-  labs(x = "chromosome", y = "number of genes", fill = "ASE results")+
-  theme(axis.title = element_text(size = 12, face = "bold", colour = "black"),
-        axis.text.y = element_text(size = 10, colour = "black"),
-        axis.text.x = element_text(size = 10, colour = "black"),
-        legend.text = element_text(size = 10, colour = "black"),
-        legend.title = element_text(size = 12, face = "bold", colour = "black"))
-
-ggsave(filename = paste0(out, "/aseGenesBar.pdf"), plot = barplot, width = 12, height = 5, units = "in")
-
-####
-#### CHROMPLOT
-####
-
-genes1 <- df[df$colour_filt == "MAF > 0.75 & padj < 0.05","gene"]
-genes2 <- df[df$colour_filt != "MAF > 0.75 & padj < 0.05","gene"]
-
-bed1 <- data.frame(Chrom = all_genes$V1[all_genes$V4 %in% genes1], 
-                   Start = all_genes$V2[all_genes$V4 %in% genes1],
-                   End = all_genes$V3[all_genes$V4 %in% genes1])
-bed2 <- data.frame(Chrom = all_genes$V1[all_genes$V4 %in% genes2], 
-                   Start = all_genes$V2[all_genes$V4 %in% genes2],
-                   End = all_genes$V3[all_genes$V4 %in% genes2])
-
-pdf(paste0(out, "/chromPlot.pdf"), width = 9, height = 8)
-chromPlot(gaps=hg_gap, annot1=bed1, annot2 = bed2, colAnnot1 = "#e74645", colAnnot2 = "grey",  bands=hg_cytoBandIdeo, bin = 1000000, chrSide=c(-1,1,1,1,1,1,1,1))
-dev.off()
-
-####
-#### SANKEY PLOT
-####
-
-# set filters on the RPKM matrix
-rpkm_sample$gene_biotype <- all_genes$V7[match(rpkm_sample$gene, all_genes$V4)]
-rpkm_sample_filt1 <- rpkm_sample[rpkm_sample$gene_biotype %in% c("lincRNA", "miRNA", "protein_coding"),]
-rpkm_sample_filt2 <- rpkm_sample_filt1[rpkm_sample_filt1$HTMCP.03.06.02109 > 1,] 
-
-# get the input values for the plot
-a <- nrow(rpkm_sample_filt1)
-b <- c(nrow(rpkm_sample_filt2),nrow(rpkm_sample_filt1[rpkm_sample_filt1$HTMCP.03.06.02109 <= 1,] ))
-c <- c(nrow(results_filt),nrow(rpkm_sample_filt2[!rpkm_sample_filt2$gene %in% results_filt$gene,]))
-d <- c(nrow(results_filt[results_filt$padj < 0.05 & results_filt$majorAlleleFrequency > 0.75,]),
-       sum(nrow(results_filt[results_filt$padj >= 0.05 & results_filt$majorAlleleFrequency <= 0.75,]),
-       nrow(results_filt[results_filt$padj >= 0.05 & results_filt$majorAlleleFrequency > 0.75,]),
-       nrow(results_filt[results_filt$padj < 0.05 & results_filt$majorAlleleFrequency <= 0.75,])))
-
-# create a connection data frame
-links <- data.frame(
-  source=c(rep(paste0("All Genes (n=", a, ")"), 2), rep(paste0("RPKM > 1 (n=", b[1], ")"), 2), rep(paste0("Phased Genes (n=", c[1], ")"), 2)),
-  target=c(paste0("RPKM > 1 (n=", b[1], ")"), paste0("RPKM <= 1 (n=", b[2], ")"), 
-           paste0("Phased Genes (n=", c[1], ")"), paste0("Unhased Genes (n=", c[2], ")"), 
-           paste0("ASE Genes (n=", d[1], ")"), paste0("Biallelic Genes (n=", d[2], ")")), 
-  value=c(b, c, d)
-)
-
-
-# create a node data frame: it lists every entities involved in the flow
-nodes <- data.frame(
-  name=c(as.character(links$source), 
-         as.character(links$target)) %>% unique()
-)
-
-# Reformat the links
-links$IDsource <- match(links$source, nodes$name)-1 
-links$IDtarget <- match(links$target, nodes$name)-1
-
-# Make the Network
-sankey <- sankeyNetwork(Links = links, Nodes = nodes,
-                   Source = "IDsource", Target = "IDtarget",
-                   Value = "value", NodeID = "name", 
-                   sinksRight=FALSE, fontSize = 18)
-
-saveWidget(sankey, file=paste0(out, "/sankeyPlot.html"))
-
-print("Figures completed")
+print("Finished MBASED script")

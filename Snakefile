@@ -21,7 +21,7 @@ sample_ids = samples_dict.keys()
 ### -------------------------------------------------------------------
 rule all:
     input:
-	    expand("output/{sample}/mBASED",sample=sample_ids)
+	    expand("output/{sample}/mBASED/sankeyPlot.html",sample=sample_ids)
 
 ### -------------------------------------------------------------------
 ### Call and filter the DNA SNVs
@@ -129,7 +129,7 @@ rule intersect_genes:
         "output/{sample}/rna.isec.dna.snps.genes.vcf.gz"
     conda: "config/ase-env.yaml"
     shell:
-        "bedtools intersect -loj -a {input.vcf} -b {input.bed} | cut -f 1-10,14,16,17 > {output}"
+        "bedtools intersect -loj -a {input.vcf} -b {input.bed} | cut -f 1-10,14,17,18 > {output}"
 
 ### -------------------------------------------------------------------
 ### Run MBASED
@@ -141,6 +141,16 @@ rule mbased:
         vcf = "output/{sample}/rna.isec.dna.snps.genes.vcf.gz",
         rpkm = rpkm_path
     output:
-        directory("output/{sample}/mBASED")
+        "output/{sample}/mBASED/MBASED_expr_gene_results.txt"
     shell:
-        "scripts/mbased.R --phase={input.phase} --rna={input.vcf} --sample={wildcards.sample} --rpkm={input.rpkm} --min=1 --outdir={output}"
+        "scripts/mbased.R --phase={input.phase} --rna={input.vcf} --sample={wildcards.sample} --rpkm={input.rpkm} --min=1 --outdir=output/{wildcards.sample}/mBASED"
+
+rule figures:
+    input:
+        mbased = "output/{sample}/mBASED/MBASED_expr_gene_results.txt",
+        bed = gene_anno,
+        rpkm = rpkm_path
+    output:
+        "output/{sample}/mBASED/sankeyPlot.html"
+    shell:
+        "scripts/figures.R --mbased={input.mbased} --rpkm={input.rpkm} --gene={input.bed} --rpkm={input.rpkm} --sample={wildcards.sample} --outdir=output/{wildcards.sample}/mBASED"

@@ -153,4 +153,4 @@ rule figures:
     output:
         "output/{sample}/mBASED/sankeyPlot.html"
     shell:
-        "scripts/figures.R --mbased={input.mbased} --rpkm={input.rpkm} --gene={input.bed} --rpkm={input.rpkm} --sample={wildcards.sample} --outdir=output/{wildcards.sample}/mBASED"
+        "scripts/figures.R --mbased={input.mbased} --rpkm={input.rpkm} --gene={input.bed} --sample={wildcards.sample} --outdir=output/{wildcards.sample}/mBASED"

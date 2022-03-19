@@ -51,6 +51,7 @@ out <- opt$outdir
 sample <- opt$sample
 
 rpkm_sample <- rpkm[,c("gene", sample)] 
+colnames(rpkm_sample) <- c("gene", "expr")
 
 # make a colour filter
 df$colour_filt <- ifelse(df$padj < 0.05 & df$majorAlleleFrequency > 0.75, "MAF > 0.75 & padj < 0.05",
@@ -128,11 +129,11 @@ dev.off()
 # set filters on the RPKM matrix
 rpkm_sample$gene_biotype <- all_genes$V7[match(rpkm_sample$gene, all_genes$V4)]
 rpkm_sample_filt1 <- rpkm_sample[rpkm_sample$gene_biotype %in% c("lincRNA", "miRNA", "protein_coding"),]
-rpkm_sample_filt2 <- rpkm_sample_filt1[rpkm_sample_filt1$HTMCP.03.06.02109 > 1,] 
+rpkm_sample_filt2 <- rpkm_sample_filt1[rpkm_sample_filt1$expr > 1,] 
 
 # get the input values for the plot
 a <- nrow(rpkm_sample_filt1)
-b <- c(nrow(rpkm_sample_filt2),nrow(rpkm_sample_filt1[rpkm_sample_filt1$HTMCP.03.06.02109 <= 1,] ))
+b <- c(nrow(rpkm_sample_filt2),nrow(rpkm_sample_filt1[rpkm_sample_filt1$expr <= 1,] ))
 c <- c(nrow(df),nrow(rpkm_sample_filt2[!rpkm_sample_filt2$gene %in% df$gene,]))
 d <- c(nrow(df[df$padj < 0.05 & df$majorAlleleFrequency > 0.75,]),
        sum(nrow(df[df$padj >= 0.05 & df$majorAlleleFrequency <= 0.75,]),

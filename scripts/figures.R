@@ -44,10 +44,13 @@ option_list = list(
 # load in options 
 opt_parser <- OptionParser(option_list=option_list)
 opt <- parse_args(opt_parser)
-df <- opt$mbased
-rpkm <- opt$rpkm
-all_genes <- opt$gene
+df <- read.delim(opt$mbased, header = T, stringsAsFactors = F)
+rpkm <- read.delim(opt$rpkm, header = T, stringsAsFactors = F)
+all_genes <- read.delim(opt$gene, header = F, stringsAsFactors = F)
 out <- opt$outdir
+sample <- opt$sample
+
+rpkm_sample <- rpkm[,c("gene", sample)] 
 
 # make a colour filter
 df$colour_filt <- ifelse(df$padj < 0.05 & df$majorAlleleFrequency > 0.75, "MAF > 0.75 & padj < 0.05",
@@ -162,6 +165,6 @@ sankey <- sankeyNetwork(Links = links, Nodes = nodes,
                         Value = "value", NodeID = "name", 
                         sinksRight=FALSE, fontSize = 18)
 
-saveWidget(sankey, file=paste0(out, "/sankeyPlot.html"))
+saveWidget(sankey, file=paste0(out, "/sankeyPlot.html"), selfcontained = F)
 
 print("Figures completed")

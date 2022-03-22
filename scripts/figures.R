@@ -25,7 +25,7 @@ suppressMessages(library(ggsci))
 
 # Make help options
 option_list = list(
-  make_option(c("-m", "--mbased"), type="character", default=NULL,
+  make_option(c("-b", "--mbased"), type="character", default=NULL,
               help="mbased dataframe output", metavar="character"),
   make_option(c("-r", "--rpkm"), type="character", default=NULL,
               help="RPKM matrix", metavar="character"),
@@ -33,6 +33,8 @@ option_list = list(
               help="Ensembl gene annotation", metavar="character"),
   make_option(c("-s", "--sample"), type="character", default = NULL,
               help="Sample name", metavar="character"),
+  make_option(c("-m", "--min"), type="numeric", default = 1,
+              help="Minimum RPKM value", metavar="numeric"),
   make_option(c("-o", "--outdir"), type="character", default = NULL,
               help="Output directory", metavar="character")
 )
@@ -49,7 +51,12 @@ rpkm <- read.delim(opt$rpkm, header = T, stringsAsFactors = F)
 all_genes <- read.delim(opt$gene, header = F, stringsAsFactors = F)
 out <- opt$outdir
 sample <- opt$sample
+min <- opt$min
 
+# fix sample name
+sample <- ifelse(length(grep("-", sample)) == 0, sample, gsub("-", ".", sample))
+
+# select sample
 rpkm_sample <- rpkm[,c("gene", sample)] 
 colnames(rpkm_sample) <- c("gene", "expr")
 
@@ -129,11 +136,11 @@ dev.off()
 # set filters on the RPKM matrix
 rpkm_sample$gene_biotype <- all_genes$V7[match(rpkm_sample$gene, all_genes$V4)]
 rpkm_sample_filt1 <- rpkm_sample[rpkm_sample$gene_biotype %in% c("lincRNA", "miRNA", "protein_coding"),]
-rpkm_sample_filt2 <- rpkm_sample_filt1[rpkm_sample_filt1$expr > 1,] 
+rpkm_sample_filt2 <- rpkm_sample_filt1[rpkm_sample_filt1$expr > min,] 
 
 # get the input values for the plot
 a <- nrow(rpkm_sample_filt1)
-b <- c(nrow(rpkm_sample_filt2),nrow(rpkm_sample_filt1[rpkm_sample_filt1$expr <= 1,] ))
+b <- c(nrow(rpkm_sample_filt2),nrow(rpkm_sample_filt1[rpkm_sample_filt1$expr <= min,] ))
 c <- c(nrow(df),nrow(rpkm_sample_filt2[!rpkm_sample_filt2$gene %in% df$gene,]))
 d <- c(nrow(df[df$padj < 0.05 & df$majorAlleleFrequency > 0.75,]),
        sum(nrow(df[df$padj >= 0.05 & df$majorAlleleFrequency <= 0.75,]),
@@ -142,9 +149,9 @@ d <- c(nrow(df[df$padj < 0.05 & df$majorAlleleFrequency > 0.75,]),
 
 # create a connection data frame
 links <- data.frame(
-  source=c(rep(paste0("All Genes (n=", a, ")"), 2), rep(paste0("RPKM > 1 (n=", b[1], ")"), 2), rep(paste0("Phased Genes (n=", c[1], ")"), 2)),
-  target=c(paste0("RPKM > 1 (n=", b[1], ")"), paste0("RPKM <= 1 (n=", b[2], ")"), 
-           paste0("Phased Genes (n=", c[1], ")"), paste0("Unhased Genes (n=", c[2], ")"), 
+  source=c(rep(paste0("All Genes (n=", a, ")"), 2), rep(paste0("Expressed (n=", b[1], ")"), 2), rep(paste0("Phased Genes (n=", c[1], ")"), 2)),
+  target=c(paste0("Expressed (n=", b[1], ")"), paste0("Not Expressed (n=", b[2], ")"), 
+           paste0("Phased Genes (n=", c[1], ")"), paste0("Unphased Genes (n=", c[2], ")"), 
            paste0("ASE Genes (n=", d[1], ")"), paste0("Biallelic Genes (n=", d[2], ")")), 
   value=c(b, c, d)
 )

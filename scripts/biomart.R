@@ -20,3 +20,4 @@ all_genes$chromosome_name <- paste0("chr", all_genes$chromosome_name)
 
 # save
 write.table(all_genes, file="/projects/vporter_prj/git-repo/ASE/annotation/biomart_ensembl100_GRCh38.bed", quote = F, sep = "\t", col.names = F, row.names = F)
+

@@ -139,18 +139,28 @@ rule mbased:
     input:
         phase = lambda w: config["samples"][w.sample]["phase"],
         vcf = "output/{sample}/rna.isec.dna.snps.genes.vcf.gz",
+    output:
+        "output/{sample}/mBASED/MBASEDresults.rds"
+    threads: 20
+    shell:
+        "scripts/mbased.R --phase={input.phase} --rna={input.vcf} --outdir=output/{wildcards.sample}/mBASED"
+
+rule addExpression:
+    input:
+        rds = "output/{sample}/mBASED/MBASEDresults.rds",
+        vcf = "output/{sample}/rna.isec.dna.snps.genes.vcf.gz",
         rpkm = rpkm_path
     output:
         "output/{sample}/mBASED/MBASED_expr_gene_results.txt"
     shell:
-        "scripts/mbased.R --phase={input.phase} --rna={input.vcf} --sample={wildcards.sample} --rpkm={input.rpkm} --min=1 --outdir=output/{wildcards.sample}/mBASED"
+        "scripts/addExpression.R --mbased={input.rds} --sample={wildcards.sample} --rpkm={input.rpkm} --min=1 --outdir=output/{wildcards.sample}/mBASED"
 
 rule figures:
     input:
-        mbased = "output/{sample}/mBASED/MBASED_expr_gene_results.txt",
+        txt = "output/{sample}/mBASED/MBASED_expr_gene_results.txt",
         bed = gene_anno,
         rpkm = rpkm_path
     output:
         "output/{sample}/mBASED/sankeyPlot.html"
     shell:
-        "scripts/figures.R --mbased={input.mbased} --rpkm={input.rpkm} --gene={input.bed} --sample={wildcards.sample} --outdir=output/{wildcards.sample}/mBASED"
+        "scripts/figures.R --mbased={input.txt} --rpkm={input.rpkm} --gene={input.bed} --sample={wildcards.sample} --outdir=output/{wildcards.sample}/mBASED"

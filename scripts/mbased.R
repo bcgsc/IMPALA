@@ -26,13 +26,7 @@ option_list = list(
               help="Phased VCF file (from WhatsHap)", metavar="character"),
   make_option(c("-r", "--rna"), type="character", default=NULL,
               help="Tumour RNA vcf file (from Strelka2)", metavar="character"),
-  make_option(c("-s", "--sample"), type="character", default = NULL,
-              help="Sample name from the RPKM matrix (HTMCP written like e.g. HTMCP.03.06.02109)", metavar="character"),
-  make_option(c("-k", "--rpkm"), type="character", default = NULL,
-              help="RPKM matrix", metavar="character"),
-  make_option(c("-m", "--min"), type="numeric", default = 1,
-              help="Minimum RPKM value", metavar="numeric"),
-  make_option(c("-o", "--outdir"), type="character", default = "mbased_output",
+  make_option(c("-o", "--outdir"), type="character", default = "mBASED",
               help="Output directory name", metavar="character")
 )
 
@@ -40,11 +34,6 @@ option_list = list(
 opt_parser <- OptionParser(option_list=option_list)
 opt <- parse_args(opt_parser)
 out <- opt$outdir
-sample <- opt$sample
-rpkm <- read.delim(opt$rpkm, header = T, stringsAsFactors = F) 
-min <- opt$min
-
-dir.create(out)
 
 ## ---------------------------------------------------------------------------
 ## USER FUNCTIONS
@@ -182,7 +171,7 @@ if (!is.null(opt$phase)){
   ASEresults_1s_haplotypesKnown <- runMBASED(ASESummarizedExperiment=mySample,
                                              isPhased=TRUE,
                                              numSim=10^6,
-                                             BPPARAM = SerialParam())
+                                             BPPARAM = MulticoreParam(workers = 20))
   
   saveRDS(ASEresults_1s_haplotypesKnown, file=paste0(out, "/ASEresults_1s_haplotypesKnown.rds"))
   
@@ -193,6 +182,10 @@ if (!is.null(opt$phase)){
   results$geneOutput$padj <- p.adjust(p = results$geneOutput$pValueASE, method = "BH")
   results$geneOutput$significance <- as.factor(ifelse(results$geneOutput$padj < 0.05, "padj < 0.05", "padj > 0.05"))
   results$geneOutput$gene <- rownames(results$geneOutput)
+  
+  # add the locus
+  results$geneOutput$geneBand <- rna_filt$gene_locus[match(results$geneOutput$gene, rna_filt$gene)]
+  results$geneOutput$geneBiotype <- rna_filt$gene_biotype[match(results$geneOutput$gene, rna_filt$gene)]
 
 ### WITHOUT PHASING
 } else {
@@ -233,7 +226,7 @@ if (!is.null(opt$phase)){
   ASEresults_1s_haplotypesUnknown <- runMBASED(ASESummarizedExperiment=mySample,
                                                isPhased=FALSE,
                                                numSim=10^6,
-                                               BPPARAM = SerialParam())
+                                               BPPARAM = MulticoreParam(workers = 20))
   saveRDS(ASEresults_1s_haplotypesUnknown, file=paste0(out, "/ASEresults_1s_haplotypesUnknown.rds"))
   
   # extract results
@@ -244,39 +237,13 @@ if (!is.null(opt$phase)){
   results$geneOutput$significance <- as.factor(ifelse(results$geneOutput$padj < 0.05, "padj < 0.05", "padj > 0.05"))
   results$geneOutput$gene <- rownames(results$geneOutput)
   
+  # add the locus
+  results$geneOutput$geneBand <- rna_filt$gene_locus[match(results$geneOutput$gene, rna_filt$gene)]
+  results$geneOutput$geneBiotype <- rna_filt$gene_biotype[match(results$geneOutput$gene, rna_filt$gene)]
+  
 } 
 
 # save the results 
 saveRDS(results, file=paste0(out, "/MBASEDresults.rds"))
-print("Finished MBASED, adding expression ...")
+print("Finished MBASED")
 
-## ---------------------------------------------------------------------------
-## ADD THE RPKM AND FILTER THE ASE GENES
-## ---------------------------------------------------------------------------
-
-# add the RPKM of this sample
-rpkm_sample <- rpkm[,c("gene", sample)] 
-
-# expressed genes in the sample
-results$geneOutput$RPKM <- rpkm_sample[match(results$geneOutput$gene, rpkm_sample$gene), 2]
-results_filt <- results$geneOutput[results$geneOutput$RPKM > min, ]
-
-# filter for genes that have an RPKM calculated
-results_filt <- results_filt[complete.cases(results_filt),]
-
-# MAF filter
-results_filt$MAF <- as.factor(ifelse(results_filt$majorAlleleFrequency > 0.75, "MAF > 0.75", "MAF < 0.75"))
-
-# add the locus
-results_filt$gene_band <- rna_filt$gene_locus[match(results_filt$gene, rna_filt$gene)]
-results_filt$gene_biotype <- rna_filt$gene_biotype[match(results_filt$gene, rna_filt$gene)]
-
-# rearrange columns to a logical orger
-results_filt <- results_filt[,c("gene", "gene_biotype", "gene_band", "RPKM", "allele1IsMajor","majorAlleleFrequency", 
-                                "pValueASE", "pValueHeterogeneity", "padj",
-                                "significance", "MAF")]
-
-# save the data frame as a table
-write.table(results_filt, paste0(out, "/MBASED_expr_gene_results.txt"), quote = F, col.names = T, row.names = F, sep = "\t")
-
-print("Finished MBASED script")

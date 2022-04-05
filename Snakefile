@@ -35,6 +35,7 @@ rule dna_snv_calling:
     output:
         "output/{sample}/StrelkaDNA/results/variants/genome.S1.vcf.gz"
     conda: "config/strelka.yaml"
+    singularity: "docker://cmopipeline/strelka2-manta-bcftools-vt:2.0.0"
     threads: 20
     shell:
         """
@@ -48,6 +49,7 @@ rule dna_snv_filt:
     output:
         "output/{sample}/dna.het.pass.snps.vcf.gz"
     conda: "config/ase-env.yaml"
+    singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     shell:
         "zcat {input.vcf} | grep -E '(PASS|#)' | grep -E '(0/1|#)' | awk '/^#/||length($4)==1 && length($5)==1' | bgzip > {output}"
 
@@ -57,6 +59,7 @@ rule dna_snv_index:
     output:
         "output/{sample}/dna.het.pass.snps.vcf.gz.tbi"
     conda: "config/ase-env.yaml"
+    singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     shell:
         "tabix {input.vcf}"
 
@@ -73,6 +76,7 @@ rule rna_snv_calling:
     output:
         "output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz"
     conda: "config/strelka.yaml"
+    singularity: "docker://cmopipeline/strelka2-manta-bcftools-vt:2.0.0"
     threads: 20
     shell:
         """
@@ -86,6 +90,7 @@ rule pass_filt:
     output:
         "output/{sample}/rna.forceGT.pass.vcf.gz"
     conda: "config/ase-env.yaml"
+    singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     shell:
         "zcat {input.vcf} | grep -E '(PASS|#)' | bgzip > {output}"
 
@@ -95,6 +100,7 @@ rule rna_snv_index:
     output:
         "output/{sample}/rna.forceGT.pass.vcf.gz.tbi"
     conda: "config/ase-env.yaml"
+    singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     shell:
         "tabix {input.vcf}"
 
@@ -106,6 +112,7 @@ rule intersect:
     output:
         "output/{sample}/rna.isec.dna.snps.vcf"
     conda: "config/ase-env.yaml"
+    singularity: "docker://quay.io/biocontainers/bcftools:1.15--h0ea216a_2"
     shell:
         """
         bcftools isec {input.vcf2} {input.vcf1} -p output/{wildcards.sample}/isec -n =2 -w 1
@@ -118,6 +125,7 @@ rule intersect_gz:
     output:
         "output/{sample}/rna.isec.dna.snps.vcf.gz"
     conda: "config/ase-env.yaml"
+    singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     shell:
         "bgzip {input}"
 
@@ -128,6 +136,7 @@ rule intersect_genes:
     output:
         "output/{sample}/rna.isec.dna.snps.genes.vcf.gz"
     conda: "config/ase-env.yaml"
+    singularity: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
     shell:
         "bedtools intersect -loj -a {input.vcf} -b {input.bed} | cut -f 1-10,14,17,18 > {output}"
 

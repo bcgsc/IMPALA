@@ -35,7 +35,7 @@ rule dna_snv_calling:
     output:
         "output/{sample}/StrelkaDNA/results/variants/genome.S1.vcf.gz"
     conda: "config/strelka.yaml"
-    singularity: "docker://cmopipeline/strelka2-manta-bcftools-vt:2.0.0"
+    singularity: "docker://quay.io/biocontainers/strelka:2.9.10--h9ee0642_1"
     threads: 20
     shell:
         """
@@ -66,6 +66,24 @@ rule dna_snv_index:
 ### -------------------------------------------------------------------
 ### Call and filter the RNA SNVs
 ### -------------------------------------------------------------------
+rule phase_vcf_filter:
+    input: 
+        phase = lambda w: config["samples"][w.sample]["phase"]
+    output:
+        "output/{sample}/phase.het.pass.snps.vcf.gz"
+    singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
+    shell:
+        "cat {input.phase} | grep -E '(PASS|#)' | grep -E '(0/1|\||#)' | awk '/^#/||length($4)==1 && length($5)==1' | bgzip > {output}"
+
+
+rule phase_vcf_index:
+    input:
+        vcf = "output/{sample}/phase.het.pass.snps.vcf.gz"
+    output:
+        "output/{sample}/phase.het.pass.snps.vcf.gz.tbi"
+    singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
+    shell:
+        "tabix {input.vcf}"
 
 rule rna_snv_calling:
     input:
@@ -76,7 +94,7 @@ rule rna_snv_calling:
     output:
         "output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz"
     conda: "config/strelka.yaml"
-    singularity: "docker://cmopipeline/strelka2-manta-bcftools-vt:2.0.0"
+    singularity: "docker://quay.io/biocontainers/strelka:2.9.10--h9ee0642_1"
     threads: 20
     shell:
         """

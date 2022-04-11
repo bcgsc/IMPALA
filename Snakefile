@@ -64,7 +64,7 @@ rule dna_snv_index:
         "tabix {input.vcf}"
 
 ### -------------------------------------------------------------------
-### Call and filter the RNA SNVs
+### Call and filter the phase vcf
 ### -------------------------------------------------------------------
 rule phase_vcf_filter:
     input: 
@@ -84,6 +84,10 @@ rule phase_vcf_index:
     singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     shell:
         "tabix {input.vcf}"
+
+### -------------------------------------------------------------------
+### Call and filter the RNA SNVs
+### -------------------------------------------------------------------
 
 rule rna_snv_calling:
     input:

@@ -24,10 +24,10 @@ rule all:
 	    expand("output/{sample}/mBASED/sankeyPlot.html",sample=sample_ids)
 
 ### -------------------------------------------------------------------
-### Call and filter the DNA SNVs
+### Call and filter the DNA SNVs # Unused rules (Used phased VCF instead)
 ### -------------------------------------------------------------------
 
-rule dna_snv_calling:
+rule dna_snv_calling: # UNUSED RULE
     input:
         bam = lambda w: config["samples"][w.sample]["dna"],
         ref = genome_path,
@@ -43,7 +43,7 @@ rule dna_snv_calling:
         output/{wildcards.sample}/StrelkaDNA/runWorkflow.py -m local -j {threads}
         """
 
-rule dna_snv_filt:
+rule dna_snv_filt: # UNUSED RULE
     input:
         vcf = "output/{sample}/StrelkaDNA/results/variants/genome.S1.vcf.gz"
     output:
@@ -53,7 +53,7 @@ rule dna_snv_filt:
     shell:
         "zcat {input.vcf} | grep -E '(PASS|#)' | grep -E '(0/1|#)' | awk '/^#/||length($4)==1 && length($5)==1' | bgzip > {output}"
 
-rule dna_snv_index:
+rule dna_snv_index: # UNUSED RULE
     input:
         vcf = "output/{sample}/dna.het.pass.snps.vcf.gz"
     output:
@@ -92,9 +92,9 @@ rule phase_vcf_index:
 rule rna_snv_calling:
     input:
         bam = lambda w: config["samples"][w.sample]["rna"],
-        vcf = "output/{sample}/dna.het.pass.snps.vcf.gz",
+        vcf = "output/{sample}/phase.het.pass.snps.vcf.gz",
         ref = genome_path,
-        index = "output/{sample}/dna.het.pass.snps.vcf.gz.tbi"
+        index = "output/{sample}/phase.het.pass.snps.vcf.gz.tbi"
     output:
         "output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz"
     conda: "config/strelka.yaml"
@@ -126,9 +126,12 @@ rule rna_snv_index:
     shell:
         "tabix {input.vcf}"
 
+### -------------------------------------------------------------------
+### Intersect RNA VCF with Phased VCF
+### -------------------------------------------------------------------
 rule intersect:
     input:
-        vcf1 = "output/{sample}/dna.het.pass.snps.vcf.gz",
+        vcf1 = "output/{sample}/phase.het.pass.snps.vcf.gz",
         vcf2 = "output/{sample}/rna.forceGT.pass.vcf.gz",
         index = "output/{sample}/rna.forceGT.pass.vcf.gz.tbi"
     output:
@@ -151,7 +154,34 @@ rule intersect_gz:
     shell:
         "bgzip {input}"
 
-rule intersect_genes:
+### -------------------------------------------------------------------
+### Annotate and filter VCF with genes
+### -------------------------------------------------------------------
+
+rule snpEff:
+    input: 
+        "output/{sample}/rna.isec.dna.snps.vcf"
+    output:
+        "output/{sample}/rna.isec.dna.snps.annot.vcf"
+    singularity: "docker://quay.io/biocontainers/snpeff:5.1--hdfd78af_1	"
+    shell:
+        """
+        java -Xmx100g -jar /usr/local/share/snpeff-5.1-1/snpEff.jar GRCh38.99 {input} > {output}
+        """
+
+rule snpSift:
+    input: 
+        "output/{sample}/rna.isec.dna.snps.annot.vcf"
+    output:
+        geneFilter = "output/{sample}/rna.isec.dna.snps.annotGene.vcf"
+        tsv = "output/{sample}/rna.isec.dna.snps.annotGene.tsv"
+    shell:
+        """
+        java -Xmx100g -jar /usr/local/share/snpsift-4.3.1t-3/SnpSift.jar filter "( ANN[0].GENE exist )" {input} > {output.geneFilter}
+        java -Xmx100g -jar /usr/local/share/snpsift-4.3.1t-3/SnpSift.jar extractFields {output.geneFilter} CHROM POS GEN[0].AD ALT REF ANN[0].GENE ANN[0].BIOTYPE > {output.tsv}
+        """
+
+rule intersect_genes: # UNUSED RULE
     input:
         vcf = "output/{sample}/rna.isec.dna.snps.vcf.gz",
         bed = gene_anno
@@ -169,17 +199,16 @@ rule intersect_genes:
 rule mbased:
     input:
         phase = lambda w: config["samples"][w.sample]["phase"],
-        vcf = "output/{sample}/rna.isec.dna.snps.genes.vcf.gz",
+        tsv = "output/{sample}/rna.isec.dna.snps.annotGene.tsv",
     output:
         "output/{sample}/mBASED/MBASEDresults.rds"
     threads: 20
     shell:
-        "scripts/mbased.R --phase={input.phase} --rna={input.vcf} --outdir=output/{wildcards.sample}/mBASED"
+        "scripts/mbased.R --phase={input.phase} --rna={input.tsv} --outdir=output/{wildcards.sample}/mBASED"
 
 rule addExpression:
     input:
         rds = "output/{sample}/mBASED/MBASEDresults.rds",
-        vcf = "output/{sample}/rna.isec.dna.snps.genes.vcf.gz",
         rpkm = rpkm_path
     output:
         "output/{sample}/mBASED/MBASED_expr_gene_results.txt"

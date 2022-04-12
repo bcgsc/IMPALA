@@ -5,6 +5,7 @@ configfile: "config/parameters.yaml"
 
 # path to the reference genome fasta
 genome_path = config["genome"][config["genome_name"]]
+genome_name = {"hg19": "GRCh37.75", "hg38": "GRCh38.99", "hg38_no_alt_TCGA_HTMCP_HPVs": "GRCh38.99"}[config["genome_name"]]
 
 # Ensembl 100 genes
 gene_anno = config["annotation"][config["genome_name"]]
@@ -163,10 +164,12 @@ rule snpEff:
         "output/{sample}/rna.isec.dna.snps.vcf"
     output:
         "output/{sample}/rna.isec.dna.snps.annot.vcf"
-    singularity: "docker://quay.io/biocontainers/snpeff:5.1--hdfd78af_1	"
+    singularity: "docker://quay.io/biocontainers/snpeff:5.1--hdfd78af_1"
+    params:
+        genome = genome_name
     shell:
         """
-        java -Xmx100g -jar /usr/local/share/snpeff-5.1-1/snpEff.jar GRCh38.99 {input} > {output}
+        java -Xmx100g -jar /usr/local/share/snpeff-5.1-1/snpEff.jar {params.genome} {input} > {output}
         """
 
 rule snpSift:
@@ -175,6 +178,7 @@ rule snpSift:
     output:
         geneFilter = "output/{sample}/rna.isec.dna.snps.annotGene.vcf"
         tsv = "output/{sample}/rna.isec.dna.snps.annotGene.tsv"
+    singularity: ""
     shell:
         """
         java -Xmx100g -jar /usr/local/share/snpsift-4.3.1t-3/SnpSift.jar filter "( ANN[0].GENE exist )" {input} > {output.geneFilter}

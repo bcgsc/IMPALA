@@ -176,9 +176,9 @@ rule snpSift:
     input: 
         "output/{sample}/rna.isec.dna.snps.annot.vcf"
     output:
-        geneFilter = "output/{sample}/rna.isec.dna.snps.annotGene.vcf"
+        geneFilter = "output/{sample}/rna.isec.dna.snps.annotGene.vcf",
         tsv = "output/{sample}/rna.isec.dna.snps.annotGene.tsv"
-    singularity: ""
+    singularity: "docker://quay.io/biocontainers/snpsift:4.2--hdfd78af_5"
     shell:
         """
         java -Xmx100g -jar /usr/local/share/snpsift-4.3.1t-3/SnpSift.jar filter "( ANN[0].GENE exist )" {input} > {output.geneFilter}
@@ -203,7 +203,7 @@ rule intersect_genes: # UNUSED RULE
 rule mbased:
     input:
         phase = lambda w: config["samples"][w.sample]["phase"],
-        tsv = "output/{sample}/rna.isec.dna.snps.annotGene.tsv",
+        tsv = "output/{sample}/rna.isec.dna.snps.genes.vcf.gz",
     output:
         "output/{sample}/mBASED/MBASEDresults.rds"
     threads: 20

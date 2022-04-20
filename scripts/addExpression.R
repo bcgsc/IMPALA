@@ -52,11 +52,11 @@ sample <- ifelse(length(grep("-", sample)) == 0, sample, gsub("-", ".", sample))
 rpkm_sample <- rpkm[,c("gene", sample)] 
 
 # expressed genes in the sample
-results$geneOutput$RPKM <- rpkm_sample[match(results$geneOutput$gene, rpkm_sample$gene), 2]
+results$geneOutput$RPKM <- rpkm_sample[match(results$geneOutput$gene, gsub(" ", "", rpkm_sample$gene, fixed = TRUE)), 2]
 results_filt <- results$geneOutput[results$geneOutput$RPKM > min, ]
 
 # filter for genes that have an RPKM calculated
-results_filt <- results_filt[complete.cases(results_filt),]
+results_filt <- results_filt[!is.na(results_filt$RPKM),] 
 
 # MAF filter
 results_filt$MAF <- as.factor(ifelse(results_filt$majorAlleleFrequency > 0.75, "MAF > 0.75", "MAF < 0.75"))

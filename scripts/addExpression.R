@@ -63,7 +63,7 @@ results_filt$MAF <- as.factor(ifelse(results_filt$majorAlleleFrequency > 0.75, "
 results_filt$aseResults <- as.factor(ifelse(results_filt$majorAlleleFrequency > 0.75 & results_filt$padj < 0.05, "ASE", "BAE"))
 
 # rearrange columns to a logical orger
-results_filt <- results_filt[,c("gene", "geneBiotype", "geneBand", "RPKM", "allele1IsMajor","majorAlleleFrequency", 
+results_filt <- results_filt[,c("gene", "geneBiotype", "RPKM", "allele1IsMajor","majorAlleleFrequency", 
                                 "pValueASE", "pValueHeterogeneity", "padj",
                                 "significance", "MAF", "aseResults")]
 

@@ -186,7 +186,8 @@ rule snpEff:
             -v {params.genome} \
             -c {params.snpEff_config} \
             -dataDir {params.snpEff_datadir} \
-            ${input} > ${output} 2> {log}
+            -noStats \
+            {input} > {output} 2> {log}
         """
 
 rule dbSNP_annotation:
@@ -214,6 +215,9 @@ rule snpSift:
         tsv = "output/{sample}/rna.isec.filterSnps.tsv"
     #singularity: "docker://quay.io/biocontainers/snpsift:4.2--hdfd78af_5"
     log: "output/{sample}/log/snpSift.log"
+    params:
+        java = config["softwarePath"]["java"],
+        snpSift = config["softwarePath"]["snpSift"],
     shell:
         """
         {params.java} -Xmx64g -jar {params.snpSift} filter "( exists ANN[0].GENE )" {input} | \

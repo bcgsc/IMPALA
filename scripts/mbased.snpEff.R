@@ -78,7 +78,7 @@ summarizeASEResults_1s <- function(MBASEDOutput) {
 ## ---------------------------------------------------------------------------
 
 # read in the RNA calls
-rna_filt <- read.delim(opt$rna, header = F, comment.char = "#", stringsAsFactors = F)
+rna_filt <- read.delim(opt$rna, header = T, comment.char = "#", stringsAsFactors = F)
 colnames(rna_filt) <- c("CHROM", "POS", "AD","REF","ALT","gene", "gene_biotype") 
 rna_filt$variant <- paste0(rna_filt$CHROM, ":", rna_filt$POS)
 
@@ -118,6 +118,16 @@ if (!is.null(opt$phase)){
   
   # Add the genotype from WhatsHap 
   rna_filt$GT <- wh$GT[match(rna_filt$variant, wh$variant)]
+  
+  # Find unphased genes with one variant (test)
+  singleUnphased <- rna_filt %>%
+    mutate(phase = variant %in% wh$variant) %>%
+    left_join(rna_filt %>% group_by(gene) %>% summarize(n=n())) %>%
+    dplyr::filter(!phase & n == 1) %>%
+    pull(variant)
+  
+  # Add genotype to unphased gene with one variant (test)
+  rna_filt$GT[which(rna_filt$variant %in% singleUnphased)] <- "1|0"
   
   # annotate the phased variants as alleleA and alleleB
   rna_filt$alleleA <- ifelse(rna_filt$GT == "1|0", rna_filt$ALT, rna_filt$REF)

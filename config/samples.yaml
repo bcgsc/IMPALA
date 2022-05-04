@@ -1,9 +1,10 @@
 # sample name must match the sample ID on the RPKM matrix
 samples:
-    HTMCP.03.06.02058:
+    GM12878_DNA:
         dna:
-            /projects/hpv_nanopore_prj/htmcp/illumina/WGS/A37261_hg38_no_alt_hpv_all.sorted.bam
+            /projects/glchang_prj/ASE_snakemake/coriellCellLine/GM12878/GM12878_DNA.sorted.bam 
         rna:
-            /projects/hpv_nanopore_prj/htmcp/illumina/rnaseq/A37722_hg38_no_alt_hpv_all.sorted.bam
+            /projects/glchang_prj/ASE_snakemake/coriellCellLine/GM12878/GM12878_RNA.bam 
         phase:
-            /projects/hpv_nanopore_prj2/htmcp/lims_fnn/D77540_D81468/clair_3_0_1/clair_3_0_1_D77540_D81468/phased_merge_output.vcf.gz
+            /projects/glchang_prj/ASE_snakemake/coriellCellLine/GM12878/NA12878_Guppy6_Clair3_Passed_WhatsHapPhased.vcf
+            

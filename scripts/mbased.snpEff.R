@@ -78,22 +78,17 @@ summarizeASEResults_1s <- function(MBASEDOutput) {
 ## ---------------------------------------------------------------------------
 
 # read in the RNA calls
-rna <- read.delim("/projects/vporter_prj/tools/vporter-allelespecificexpression/output/HTMCP.03.06.02058/rna.isec.dna.snps.genes.vcf.gz", header = F, comment.char = "#", stringsAsFactors = F)
-rna <- read.delim(opt$rna, header = F, comment.char = "#", stringsAsFactors = F)
-colnames(rna) <- c("CHROM", "POS", "ID","REF","ALT","QUAL","FILTER","INFO","FORMAT","SAMPLE1", "gene", "gene_biotype", "gene_locus") 
-rna$variant <- paste0(rna$CHROM, ":", rna$POS)
+rna_filt <- read.delim(opt$rna, header = T, comment.char = "#", stringsAsFactors = F)
+colnames(rna_filt) <- c("CHROM", "POS", "AD","REF","ALT","gene", "gene_biotype") 
+rna_filt$variant <- paste0(rna_filt$CHROM, ":", rna_filt$POS)
 
-# remove variants non-overlapping with genes of interest
-rna_filt <- rna[rna$gene != ".",]
 
 ## ---------------------------------------------------------------------------
 ## EXTRACT REF/ALT READ COUNTS
 ## ---------------------------------------------------------------------------
 
 # Extract and add the read counts
-info <- strsplit(rna_filt$SAMPLE1, ":")
-expr <- list_n_item(info, 6)
-expr <- strsplit(expr, ",")
+expr <- strsplit(rna_filt$AD, ",")
 rna_filt$REF.COUNTS <- as.numeric(list_n_item(expr, 1))
 rna_filt$ALT.COUNTS <- as.numeric(list_n_item(expr, 2))
 
@@ -194,7 +189,6 @@ if (!is.null(opt$phase)){
   results$geneOutput$gene <- rownames(results$geneOutput)
   
   # add the locus
-  results$geneOutput$geneBand <- rna_filt$gene_locus[match(results$geneOutput$gene, rna_filt$gene)]
   results$geneOutput$geneBiotype <- rna_filt$gene_biotype[match(results$geneOutput$gene, rna_filt$gene)]
 
 ### WITHOUT PHASING
@@ -248,7 +242,6 @@ if (!is.null(opt$phase)){
   results$geneOutput$gene <- rownames(results$geneOutput)
   
   # add the locus
-  results$geneOutput$geneBand <- rna_filt$gene_locus[match(results$geneOutput$gene, rna_filt$gene)]
   results$geneOutput$geneBiotype <- rna_filt$gene_biotype[match(results$geneOutput$gene, rna_filt$gene)]
   
 } 
@@ -256,3 +249,4 @@ if (!is.null(opt$phase)){
 # save the results 
 saveRDS(results, file=paste0(out, "/MBASEDresults.rds"))
 print("Finished MBASED")
+

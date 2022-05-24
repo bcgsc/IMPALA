@@ -20,11 +20,21 @@ samples.yaml: <br />
 - Make sure to name the sample(s) the same identifier as the matching RPKM matrix column name
 - Add the paths to the DNA-seq and RNA-seq Illumina bam files and the phased VCF file 
 
+annotationPaths.yaml: <br />
+- Use to specify paths to snpEff, snpSift and Java program and snpEff and dbSNP databases
+- Does not need to be changed if running on GSC servers
+
+## **Input**
+
+1. RNA-seq Illumina Bam File
+2. Phased VCF (from whatshap)
+3. Expression Matrix (RPKM units, Column name "Gene" and Sample names)
+
 ## **Run snakemake**
-Right now conda environments are used, but it would be good to eventually change this to docker containers. You can choose the number of max threads to use with `-c`. This is the command to run:
+You can choose the number of max threads to use with `-c`. This is the command to run:
 
 ```
-snakemake --use-conda -c 30
+snakemake -c 30 --use-singularity --singularity-args "-B /projects,/home,/gsc"
 ```
 
 # Outputs

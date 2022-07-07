@@ -23,7 +23,7 @@ sample_ids = samples_dict.keys()
 ### -------------------------------------------------------------------
 rule all:
     input:
-	    expand("output/{sample}/mBASED/sankeyPlot.html",sample=sample_ids)
+	    expand("output/{sample}/mBASED/chromPlot.pdf",sample=sample_ids)
 
 ### -------------------------------------------------------------------
 ### Call and filter the DNA SNVs # Unused rules (Used phased VCF instead)
@@ -53,7 +53,7 @@ rule dna_snv_filt: # UNUSED RULE
     conda: "config/ase-env.yaml"
     singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     shell:
-        "zcat {input.vcf} | grep -E '(PASS|#)' | grep -E '(0/1|#)' | awk '/^#/||length($4)==1 && length($5)==1' | bgzip > {output}"
+        "less {input.vcf} | grep -E '(PASS|#)' | grep -E '(0/1|#)' | awk '/^#/||length($4)==1 && length($5)==1' | bgzip > {output}"
 
 rule dna_snv_index: # UNUSED RULE
     input:
@@ -269,7 +269,7 @@ rule figures:
         bed = gene_anno,
         rpkm = rpkm_path
     output:
-        "output/{sample}/mBASED/sankeyPlot.html"
+        "output/{sample}/mBASED/chromPlot.pdf"
     log: "output/{sample}/log/figures.log"
     shell:
         "scripts/figures.R --mbased={input.txt} --rpkm={input.rpkm} --gene={input.bed} --sample={wildcards.sample} --outdir=output/{wildcards.sample}/mBASED &> {log}"

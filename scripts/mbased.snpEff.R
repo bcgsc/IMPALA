@@ -123,11 +123,10 @@ if (!is.null(opt$phase)){
   singleUnphased <- rna_filt %>%
     mutate(phase = variant %in% wh$variant) %>%
     left_join(rna_filt %>% group_by(gene) %>% summarize(n=n())) %>%
-    dplyr::filter(!phase & n == 1) %>%
-    pull(variant)
+    dplyr::filter(!phase & n == 1)
   
   # Add genotype to unphased gene with one variant (test)
-  rna_filt$GT[which(rna_filt$variant %in% singleUnphased)] <- "1|0"
+  rna_filt$GT[which(rna_filt$variant %in% singleUnphased$variant)] <- "1|0"
   
   # annotate the phased variants as alleleA and alleleB
   rna_filt$alleleA <- ifelse(rna_filt$GT == "1|0", rna_filt$ALT, rna_filt$REF)
@@ -179,7 +178,7 @@ if (!is.null(opt$phase)){
                                              BPPARAM = MulticoreParam(workers = 20))
   
   saveRDS(ASEresults_1s_haplotypesKnown, file=paste0(out, "/ASEresults_1s_haplotypesKnown.rds"))
-  
+  ASEresults_1s_haplotypesKnown <- readRDS("/home/glchang/glchang_prj/ASE_snakemake/vporter-allelespecificexpression/output/POG1022/mBASED/ASEresults_1s_haplotypesKnown.rds")
   # extract results
   results <- summarizeASEResults_1s(ASEresults_1s_haplotypesKnown)
   
@@ -187,6 +186,8 @@ if (!is.null(opt$phase)){
   results$geneOutput$padj <- p.adjust(p = results$geneOutput$pValueASE, method = "BH")
   results$geneOutput$significance <- as.factor(ifelse(results$geneOutput$padj < 0.05, "padj < 0.05", "padj > 0.05"))
   results$geneOutput$gene <- rownames(results$geneOutput)
+  
+  results$geneOutput$allele1IsMajor[results$geneOutput$gene %in% singleUnphased$gene] = NA
   
   # add the locus
   results$geneOutput$geneBiotype <- rna_filt$gene_biotype[match(results$geneOutput$gene, rna_filt$gene)]

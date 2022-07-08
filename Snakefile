@@ -251,7 +251,7 @@ rule mbased:
     threads: 20
     log: "output/{sample}/log/mbased.log"
     shell:
-        "scripts/mbased.snpEff.R --phase={input.phase} --rna={input.tsv} --outdir=output/{wildcards.sample}/mBASED &> {log}"
+        "scripts/mbased.snpEff.R --threads={threads} --phase={input.phase} --rna={input.tsv} --outdir=output/{wildcards.sample}/mBASED &> {log}"
 
 rule addExpression:
     input:

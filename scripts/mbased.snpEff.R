@@ -27,13 +27,16 @@ option_list = list(
   make_option(c("-r", "--rna"), type="character", default=NULL,
               help="Tumour RNA vcf file (from Strelka2)", metavar="character"),
   make_option(c("-o", "--outdir"), type="character", default = "mBASED",
-              help="Output directory name", metavar="character")
+              help="Output directory name", metavar="character"),
+  make_option(c("-t", "--threads"), type="integer", default = "mBASED",
+              help="Threads used for mbased", metavar="integer")
 )
 
 # load in options 
 opt_parser <- OptionParser(option_list=option_list)
 opt <- parse_args(opt_parser)
 out <- opt$outdir
+threads <- opt$threads
 
 ## ---------------------------------------------------------------------------
 ## USER FUNCTIONS
@@ -175,7 +178,7 @@ if (!is.null(opt$phase)){
   ASEresults_1s_haplotypesKnown <- runMBASED(ASESummarizedExperiment=mySample,
                                              isPhased=TRUE,
                                              numSim=10^6,
-                                             BPPARAM = MulticoreParam(workers = 20))
+                                             BPPARAM = MulticoreParam(workers = threads))
   
   saveRDS(ASEresults_1s_haplotypesKnown, file=paste0(out, "/ASEresults_1s_haplotypesKnown.rds"))
   # extract results

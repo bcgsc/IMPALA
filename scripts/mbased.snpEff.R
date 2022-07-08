@@ -178,7 +178,6 @@ if (!is.null(opt$phase)){
                                              BPPARAM = MulticoreParam(workers = 20))
   
   saveRDS(ASEresults_1s_haplotypesKnown, file=paste0(out, "/ASEresults_1s_haplotypesKnown.rds"))
-  ASEresults_1s_haplotypesKnown <- readRDS("/home/glchang/glchang_prj/ASE_snakemake/vporter-allelespecificexpression/output/POG1022/mBASED/ASEresults_1s_haplotypesKnown.rds")
   # extract results
   results <- summarizeASEResults_1s(ASEresults_1s_haplotypesKnown)
   

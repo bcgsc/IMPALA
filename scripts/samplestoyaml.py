@@ -20,6 +20,10 @@ if not os.path.exists(parser.output_path):
 with open(parser.tsv_file) as f:
     f = [l.strip().split("\t") for l in f.readlines()]
 
+class MyDumper(yaml.Dumper):
+    def increase_indent(self, flow=False, indentless=False):
+        return super(MyDumper, self).increase_indent(flow, False)
+
 def extract(lst, n):
     return [item[n] for item in lst]
 
@@ -27,16 +31,14 @@ samples = list(set(extract(f, 0)))
 out_dict = {"samples":{}}
 
 for s in samples:
-    must_have = [s]
-    must_have_set = set(must_have)
+    must_have_set = set([s])
     sub = [x for x in f if set(x) & must_have_set == must_have_set]
-    lst = []
+    sample_dict = {}
     for n in sub:
         identity = n[1]
         path = n[2]
-        element = {identity:path}
-        lst.append(element)
-        out_dict["samples"][s] = lst
+        sample_dict[identity] = path
+    out_dict["samples"][s] = sample_dict
 
 with open(os.path.join(parser.output_path, "samples.yaml"), "w") as f:
-    yaml.dump(out_dict, f, default_flow_style=False)
+    yaml.dump(out_dict, f, Dumper=MyDumper, default_flow_style=False)

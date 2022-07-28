@@ -15,13 +15,15 @@ git clone https://svn.bcgsc.ca/bitbucket/scm/marra/vporter-allelespecificexpress
 parameters.yaml: <br />
 - Choose a genome to use (hg38/hg19/hg38_no_alt_TCGA_HTMCP_HPVs)
 - Specify the path to the RPKM matrix that contains the sample (can include multiple samples but sample id must be in the column names)
+- Choose to include phased genome 
 
 samples.yaml: <br />
 - Make sure to name the sample(s) the same identifier as the matching RPKM matrix column name
 - Add the paths to the DNA-seq and RNA-seq Illumina bam files and the phased VCF file 
+- Do not need to add phased VCF file is phased is false
 
 annotationPaths.yaml: <br />
-- Use to specify paths to snpEff, snpSift and Java program and snpEff and dbSNP databases
+- Use to specify paths to snpEff databases and config file
 - Does not need to be changed if running on GSC servers
 
 ## **Input**

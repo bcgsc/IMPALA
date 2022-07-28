@@ -18,6 +18,8 @@ rpkm_path = config["matrix"]
 samples_dict = config["samples"]
 sample_ids = samples_dict.keys()
 
+# Check phased
+phased = config["phased"]
 ### -------------------------------------------------------------------
 ### Target rule
 ### -------------------------------------------------------------------
@@ -29,6 +31,7 @@ rule all:
 ### -------------------------------------------------------------------
 ### Call and filter the phase vcf
 ### -------------------------------------------------------------------
+
 rule phase_vcf_filter:
     input: 
         phase = lambda w: config["samples"][w.sample]["phase"]
@@ -54,23 +57,49 @@ rule phase_vcf_index:
 ### Call and filter the RNA SNVs
 ### -------------------------------------------------------------------
 
-rule rna_snv_calling:
-    input:
-        bam = lambda w: config["samples"][w.sample]["rna"],
-        vcf = "output/{sample}/phase.het.pass.snps.vcf.gz",
-        ref = genome_path,
-        index = "output/{sample}/phase.het.pass.snps.vcf.gz.tbi"
-    output:
-        "output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz"
-    conda: "config/strelka.yaml"
-    singularity: "docker://quay.io/biocontainers/strelka:2.9.10--h9ee0642_1"
-    log: "output/{sample}/log/rna_snv_calling.log"
-    threads: 20
-    shell:
-        """
-        configureStrelkaGermlineWorkflow.py --bam={input.bam} --referenceFasta={input.ref} --forcedGT={input.vcf} --rna --runDir=output/{wildcards.sample}/StrelkaRNA &> {log}
-        output/{wildcards.sample}/StrelkaRNA/runWorkflow.py -m local -j {threads} &> {log}
-        """
+if phased:
+	rule rna_snv_calling:
+	    input:
+        	bam = lambda w: config["samples"][w.sample]["rna"],
+        	vcf = "output/{sample}/phase.het.pass.snps.vcf.gz",
+        	ref = genome_path,
+        	index = "output/{sample}/phase.het.pass.snps.vcf.gz.tbi"
+    	output:
+        	"output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz"
+    	conda: "config/strelka.yaml"
+    	singularity: "docker://quay.io/biocontainers/strelka:2.9.10--h9ee0642_1"
+    	log: "output/{sample}/log/rna_snv_calling.log"
+    	threads: 20
+    	shell:
+        	"""
+        	configureStrelkaGermlineWorkflow.py \
+			--bam={input.bam} \
+			--referenceFasta={input.ref} \
+			--forcedGT={input.vcf} \
+			--rna \
+			--runDir=output/{wildcards.sample}/StrelkaRNA &> {log}
+        	output/{wildcards.sample}/StrelkaRNA/runWorkflow.py -m local -j {threads} &> {log}
+        	"""
+else:
+	rule rna_snv_calling:
+            input:
+                bam = lambda w: config["samples"][w.sample]["rna"],
+                ref = genome_path,
+        output:
+                "output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz"
+        conda: "config/strelka.yaml"
+        singularity: "docker://quay.io/biocontainers/strelka:2.9.10--h9ee0642_1"
+        log: "output/{sample}/log/rna_snv_calling.log"
+        threads: 20
+        shell:
+                """
+                configureStrelkaGermlineWorkflow.py \
+                        --bam={input.bam} \
+                        --referenceFasta={input.ref} \
+                        --rna \
+                        --runDir=output/{wildcards.sample}/StrelkaRNA &> {log}
+                output/{wildcards.sample}/StrelkaRNA/runWorkflow.py -m local -j {threads} &> {log}
+                """
 
 rule pass_filt:
     input:
@@ -97,40 +126,41 @@ rule rna_snv_index:
 ### -------------------------------------------------------------------
 ### Intersect RNA VCF with Phased VCF
 ### -------------------------------------------------------------------
-rule intersect:
-    input:
-        vcf1 = "output/{sample}/phase.het.pass.snps.vcf.gz",
-        vcf2 = "output/{sample}/rna.forceGT.pass.vcf.gz",
-        index = "output/{sample}/rna.forceGT.pass.vcf.gz.tbi"
-    output:
-        "output/{sample}/rna.isec.snps.vcf"
-    conda: "config/ase-env.yaml"
-    singularity: "docker://quay.io/biocontainers/bcftools:1.15--h0ea216a_2"
-    log: "output/{sample}/log/intersect.log"
-    shell:
-        """
-        bcftools isec {input.vcf2} {input.vcf1} -p output/{wildcards.sample}/isec -n =2 -w 1 &> {log}
-        mv output/{wildcards.sample}/isec/0000.vcf {output}
-        """
+if phased:
+	rule intersect:
+    		input:
+        		vcf1 = "output/{sample}/phase.het.pass.snps.vcf.gz",
+        		vcf2 = "output/{sample}/rna.forceGT.pass.vcf.gz",
+        		index = "output/{sample}/rna.forceGT.pass.vcf.gz.tbi"
+    		output:
+        		"output/{sample}/rna.isec.snps.vcf"
+    		conda: "config/ase-env.yaml"
+    		singularity: "docker://quay.io/biocontainers/bcftools:1.15--h0ea216a_2"
+    		log: "output/{sample}/log/intersect.log"
+    		shell:
+        		"""
+        		bcftools isec {input.vcf2} {input.vcf1} -p output/{wildcards.sample}/isec -n =2 -w 1 &> {log}
+        		mv output/{wildcards.sample}/isec/0000.vcf {output}
+        		"""
 
-rule intersect_gz:
-    input:
-        "output/{sample}/rna.isec.snps.vcf"
-    output:
-        "output/{sample}/rna.isec.snps.vcf.gz"
-    conda: "config/ase-env.yaml"
-    singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
-    log: "output/{sample}/log/intersect_gz.log"
-    shell:
-        "bgzip {input} &> {log}"
+	rule intersect_gz:
+		input: "output/{sample}/rna.isec.snps.vcf"
+    		output: "output/{sample}/rna.isec.snps.vcf.gz"
+    		conda: "config/ase-env.yaml"
+    		singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
+    		log: "output/{sample}/log/intersect_gz.log"
+    		shell: "bgzip {input} &> {log}"
+	vcf = "output/{sample}/rna.isec.snps.vcf.gz"
+else:
+	vcf = "output/{sample}/rna.forceGT.pass.vcf.gz"
+
 
 ### -------------------------------------------------------------------
 ### Annotate and filter VCF with genes
 ### -------------------------------------------------------------------
 
 rule snpEff:
-    input: 
-        "output/{sample}/rna.isec.snps.vcf"
+    input: vcf
     output:
         "output/{sample}/rna.isec.snps.snpEff.vcf"
     singularity: "docker://quay.io/biocontainers/snpeff:5.0--hdfd78af_1"
@@ -150,8 +180,7 @@ rule snpEff:
         """
 
 rule snpSift:
-    input: 
-        "output/{sample}/rna.isec.snps.snpEff.dbSNP.vcf"
+    input: "output/{sample}/rna.isec.snps.snpEff.vcf"
     output:
         geneFilter = "output/{sample}/rna.isec.filterSnps.vcf",
         tsv = "output/{sample}/rna.isec.filterSnps.tsv"
@@ -169,16 +198,39 @@ rule snpSift:
 ### Run MBASED
 ### -------------------------------------------------------------------
 
-rule mbased:
-    input:
-        phase = lambda w: config["samples"][w.sample]["phase"],
-        tsv = "output/{sample}/rna.isec.filterSnps.tsv",
-    output:
-        "output/{sample}/mBASED/MBASEDresults.rds"
-    threads: 20
-    log: "output/{sample}/log/mbased.log"
-    shell:
-        "scripts/mbased.snpEff.R --threads={threads} --phase={input.phase} --rna={input.tsv} --outdir=output/{wildcards.sample}/mBASED &> {log}"
+if phased:
+	rule mbased:
+    		input:
+        		phase = lambda w: config["samples"][w.sample]["phase"],
+        		tsv = "output/{sample}/rna.isec.filterSnps.tsv",
+    		output:
+        		"output/{sample}/mBASED/MBASEDresults.rds"
+    		threads: 20
+    		log: "output/{sample}/log/mbased.log"
+    		shell:
+        		"""
+			scripts/mbased.snpEff.R \
+				--threads={threads} \
+				--phase={input.phase} \
+				--rna={input.tsv} \
+				--outdir=output/{wildcards.sample}/mBASED &> {log}
+			"""
+else:
+	rule mbased:
+                input:
+                        tsv = "output/{sample}/rna.isec.filterSnps.tsv",
+                output:
+                        "output/{sample}/mBASED/MBASEDresults.rds"
+                threads: 20
+                log: "output/{sample}/log/mbased.log"
+                shell:
+                        """
+                        scripts/mbased.snpEff.R \
+                                --threads={threads} \
+                                --rna={input.tsv} \
+                                --outdir=output/{wildcards.sample}/mBASED &> {log}
+                        """
+	
 
 rule addExpression:
     input:

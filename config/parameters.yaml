@@ -4,7 +4,10 @@
 genome_name: "hg38"
 
 # RPKM matrix of the samples
-matrix: /projects/glchang_prj/ASE_snakemake/coriellCellLine/GM12878/GM12878_expression_matrix.tsv 
+matrix: /projects/glchang_prj/POG_preprocess/expression_matrix.tsv
+
+# Use phased vcf or pseudophasing algorithm (True or False)
+phased: False
 
 ### Defaults that can be left alone safely
 

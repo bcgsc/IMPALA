@@ -25,45 +25,6 @@ rule all:
     input:
 	    expand("output/{sample}/mBASED/chromPlot.pdf",sample=sample_ids)
 
-### -------------------------------------------------------------------
-### Call and filter the DNA SNVs # Unused rules (Used phased VCF instead)
-### -------------------------------------------------------------------
-
-rule dna_snv_calling: # UNUSED RULE
-    input:
-        bam = lambda w: config["samples"][w.sample]["dna"],
-        ref = genome_path,
-        bed = gene_anno
-    output:
-        "output/{sample}/StrelkaDNA/results/variants/genome.S1.vcf.gz"
-    conda: "config/strelka.yaml"
-    singularity: "docker://quay.io/biocontainers/strelka:2.9.10--h9ee0642_1"
-    threads: 20
-    shell:
-        """
-        configureStrelkaGermlineWorkflow.py --bam={input.bam} --referenceFasta={input.ref} --callRegions={input.bed} --rna --runDir=output/{wildcards.sample}/StrelkaDNA
-        output/{wildcards.sample}/StrelkaDNA/runWorkflow.py -m local -j {threads}
-        """
-
-rule dna_snv_filt: # UNUSED RULE
-    input:
-        vcf = "output/{sample}/StrelkaDNA/results/variants/genome.S1.vcf.gz"
-    output:
-        "output/{sample}/dna.het.pass.snps.vcf.gz"
-    conda: "config/ase-env.yaml"
-    singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
-    shell:
-        "less {input.vcf} | grep -E '(PASS|#)' | grep -E '(0/1|#)' | awk '/^#/||length($4)==1 && length($5)==1' | bgzip > {output}"
-
-rule dna_snv_index: # UNUSED RULE
-    input:
-        vcf = "output/{sample}/dna.het.pass.snps.vcf.gz"
-    output:
-        "output/{sample}/dna.het.pass.snps.vcf.gz.tbi"
-    conda: "config/ase-env.yaml"
-    singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
-    shell:
-        "tabix {input.vcf}"
 
 ### -------------------------------------------------------------------
 ### Call and filter the phase vcf
@@ -190,22 +151,6 @@ rule snpEff:
             {input} > {output} 2> {log}
         """
 
-rule dbSNP_annotation:
-    input:
-        "output/{sample}/rna.isec.snps.snpEff.vcf"
-    output:
-        "output/{sample}/rna.isec.snps.snpEff.dbSNP.vcf"
-    params:
-        java = config["softwarePath"]["java"],
-        snpSift = config["softwarePath"]["snpSift"],
-        dbSNP = config["annotationPath"]["dbSNP_database"]
-    log: "output/{sample}/log/dbSNP_annotation.log"
-    shell:
-        """
-        {params.java} -Xmx64g -jar {params.snpSift} annotate \
-        {params.dbSNP} \
-        {input} > {output} 2> {log}
-        """
 
 rule snpSift:
     input: 
@@ -220,23 +165,11 @@ rule snpSift:
         snpSift = config["softwarePath"]["snpSift"],
     shell:
         """
-        {params.java} -Xmx64g -jar {params.snpSift} filter "( exists ANN[0].GENE )" {input} | \
-        grep -E '(#|RS)' > {output.geneFilter} 2> {log}
+        {params.java} -Xmx64g -jar {params.snpSift} filter "( exists ANN[0].GENE )" {input} > {output.geneFilter} 2> {log}
 
         {params.java} -Xmx64g -jar {params.snpSift} extractFields {output.geneFilter} \
             CHROM POS GEN[0].AD ALT REF ANN[0].GENE ANN[0].BIOTYPE > {output.tsv} 2> {log}
         """
-
-rule intersect_genes: # UNUSED RULE
-    input:
-        vcf = "output/{sample}/rna.isec.dna.snps.vcf.gz",
-        bed = gene_anno
-    output:
-        "output/{sample}/rna.isec.dna.snps.genes.vcf.gz"
-    conda: "config/ase-env.yaml"
-    singularity: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
-    shell:
-        "bedtools intersect -loj -a {input.vcf} -b {input.bed} | cut -f 1-10,14,17,18 > {output} "
 
 ### -------------------------------------------------------------------
 ### Run MBASED

@@ -233,7 +233,7 @@ if (!is.null(opt$phase)){
   ASEresults_1s_haplotypesUnknown <- runMBASED(ASESummarizedExperiment=mySample,
                                                isPhased=FALSE,
                                                numSim=10^6,
-                                               BPPARAM = MulticoreParam(workers = 20))
+                                               BPPARAM = MulticoreParam(workers = threads))
   saveRDS(ASEresults_1s_haplotypesUnknown, file=paste0(out, "/ASEresults_1s_haplotypesUnknown.rds"))
   
   # extract results

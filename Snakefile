@@ -133,17 +133,15 @@ rule snpEff:
         "output/{sample}/rna.isec.snps.vcf"
     output:
         "output/{sample}/rna.isec.snps.snpEff.vcf"
-    #singularity: "docker://quay.io/biocontainers/snpeff:5.1--hdfd78af_1"
+    singularity: "docker://quay.io/biocontainers/snpeff:5.0--hdfd78af_1"
     params:
         genome = genome_name,
-        java = config["softwarePath"]["java"],
-        snpEff = config["softwarePath"]["snpEff"],
         snpEff_config = config["annotationPath"]["snpEff_config"],
         snpEff_datadir = config["annotationPath"]["snpEff_datadir"]
     log: "output/{sample}/log/snpEff.log"
     shell:
         """
-            {params.java} -Xmx64g -jar {params.snpEff} \
+            snpEff -Xmx64g \
             -v {params.genome} \
             -c {params.snpEff_config} \
             -dataDir {params.snpEff_datadir} \
@@ -151,23 +149,19 @@ rule snpEff:
             {input} > {output} 2> {log}
         """
 
-
 rule snpSift:
     input: 
         "output/{sample}/rna.isec.snps.snpEff.dbSNP.vcf"
     output:
         geneFilter = "output/{sample}/rna.isec.filterSnps.vcf",
         tsv = "output/{sample}/rna.isec.filterSnps.tsv"
-    #singularity: "docker://quay.io/biocontainers/snpsift:4.2--hdfd78af_5"
+    singularity: "docker://quay.io/biocontainers/snpsift:5.1d--hdfd78af_0"
     log: "output/{sample}/log/snpSift.log"
-    params:
-        java = config["softwarePath"]["java"],
-        snpSift = config["softwarePath"]["snpSift"],
     shell:
         """
-        {params.java} -Xmx64g -jar {params.snpSift} filter "( exists ANN[0].GENE )" {input} > {output.geneFilter} 2> {log}
+        SnpSift -Xmx64g filter "( exists ANN[0].GENE )" {input} > {output.geneFilter} 2> {log}
 
-        {params.java} -Xmx64g -jar {params.snpSift} extractFields {output.geneFilter} \
+        SnpSift -Xmx64g extractFields {output.geneFilter} \
             CHROM POS GEN[0].AD ALT REF ANN[0].GENE ANN[0].BIOTYPE > {output.tsv} 2> {log}
         """
 

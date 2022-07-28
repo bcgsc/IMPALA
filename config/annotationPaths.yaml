@@ -1,18 +1,7 @@
-softwarePath:
-    snpEff:
-        "/gsc/software/linux-x86_64-centos7/snpEff-5.0/snpEff.jar"
-    snpSift:
-        "/gsc/software/linux-x86_64-centos7/snpEff-5.0/SnpSift.jar"
-    java:
-        "/gsc/software/linux-x86_64-centos6/jdk1.8.0_162/bin/java"
 annotationPath:
     snpEff_config:
         "/gsc/resources/annotation/snpeff/snpEff.config"
     snpEff_datadir:
         "/gsc/resources/annotation/snpeff/snpeff_binaries/5.0/data/"
-    dbSNP_database:
-        "/projects/alignment_references/9606/hg38_no_alt/annotations/snpsift-4.3/dbsnp155/dbSNP_v155.vcf.gz"
-    dbSNP_index:
-        "/projects/alignment_references/9606/hg38_no_alt/annotations/snpsift-4.3/dbsnp155/dbSNP_v155.vcf.gz.tbi"
 
     

@@ -207,9 +207,10 @@ if phased:
         		"output/{sample}/mBASED/MBASEDresults.rds"
     		threads: 20
     		log: "output/{sample}/log/mbased.log"
+		singularity: "docker://glenn032787/ase_rcontainer:1.0"
     		shell:
         		"""
-			scripts/mbased.snpEff.R \
+			Rscript scripts/mbased.snpEff.R \
 				--threads={threads} \
 				--phase={input.phase} \
 				--rna={input.tsv} \
@@ -222,10 +223,11 @@ else:
                 output:
                         "output/{sample}/mBASED/MBASEDresults.rds"
                 threads: 20
+		singularity: "docker://glenn032787/ase_rcontainer:1.0"
                 log: "output/{sample}/log/mbased.log"
                 shell:
                         """
-                        scripts/mbased.snpEff.R \
+                        Rscript scripts/mbased.snpEff.R \
                                 --threads={threads} \
                                 --rna={input.tsv} \
                                 --outdir=output/{wildcards.sample}/mBASED &> {log}
@@ -238,9 +240,17 @@ rule addExpression:
         rpkm = rpkm_path
     output:
         "output/{sample}/mBASED/MBASED_expr_gene_results.txt"
+    singularity: "docker://glenn032787/ase_rcontainer:1.0"
     log: "output/{sample}/log/addExpression.log"
     shell:
-        "scripts/addExpression.R --mbased={input.rds} --sample={wildcards.sample} --rpkm={input.rpkm} --min=1 --outdir=output/{wildcards.sample}/mBASED &> {log}"
+	"""
+	Rscript scripts/addExpression.R \
+		--mbased={input.rds} \
+		--sample={wildcards.sample} \
+		--rpkm={input.rpkm} \
+		--min=1 \
+		--outdir=output/{wildcards.sample}/mBASED &> {log}
+	"""
 
 rule figures:
     input:
@@ -249,6 +259,30 @@ rule figures:
         rpkm = rpkm_path
     output:
         "output/{sample}/mBASED/chromPlot.pdf"
+    singularity: "docker://glenn032787/ase_rcontainer:1.0"
     log: "output/{sample}/log/figures.log"
     shell:
-        "scripts/figures.R --mbased={input.txt} --rpkm={input.rpkm} --gene={input.bed} --sample={wildcards.sample} --outdir=output/{wildcards.sample}/mBASED &> {log}"
+	"""
+	Rscript scripts/figures.R \
+		--mbased={input.txt} \
+		--rpkm={input.rpkm} \
+		--gene={input.bed} \
+		--sample={wildcards.sample} \
+		--outdir=output/{wildcards.sample}/mBASED &> {log}
+	"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

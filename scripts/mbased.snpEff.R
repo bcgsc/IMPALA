@@ -25,13 +25,16 @@ option_list = list(
   make_option(c("-r", "--rna"), type="character", default=NULL,
               help="Tumour RNA vcf file (from Strelka2)", metavar="character"),
   make_option(c("-o", "--outdir"), type="character", default = "mBASED",
-              help="Output directory name", metavar="character")
+              help="Output directory name", metavar="character"),
+  make_option(c("-t", "--threads"), type="integer", default = "mBASED",
+              help="Threads used for mbased", metavar="integer")
 )
 
 # load in options 
 opt_parser <- OptionParser(option_list=option_list)
 opt <- parse_args(opt_parser)
 out <- opt$outdir
+threads <- opt$threads
 
 ## ---------------------------------------------------------------------------
 ## USER FUNCTIONS
@@ -76,22 +79,17 @@ summarizeASEResults_1s <- function(MBASEDOutput) {
 ## ---------------------------------------------------------------------------
 
 # read in the RNA calls
-rna <- read.delim("/projects/vporter_prj/tools/vporter-allelespecificexpression/output/HTMCP.03.06.02058/rna.isec.dna.snps.genes.vcf.gz", header = F, comment.char = "#", stringsAsFactors = F)
-rna <- read.delim(opt$rna, header = F, comment.char = "#", stringsAsFactors = F)
-colnames(rna) <- c("CHROM", "POS", "ID","REF","ALT","QUAL","FILTER","INFO","FORMAT","SAMPLE1", "gene", "gene_biotype", "gene_locus") 
-rna$variant <- paste0(rna$CHROM, ":", rna$POS)
+rna_filt <- read.delim(opt$rna, header = T, comment.char = "#", stringsAsFactors = F)
+colnames(rna_filt) <- c("CHROM", "POS", "AD","REF","ALT","gene", "gene_biotype") 
+rna_filt$variant <- paste0(rna_filt$CHROM, ":", rna_filt$POS)
 
-# remove variants non-overlapping with genes of interest
-rna_filt <- rna[rna$gene != ".",]
 
 ## ---------------------------------------------------------------------------
 ## EXTRACT REF/ALT READ COUNTS
 ## ---------------------------------------------------------------------------
 
 # Extract and add the read counts
-info <- strsplit(rna_filt$SAMPLE1, ":")
-expr <- list_n_item(info, 6)
-expr <- strsplit(expr, ",")
+expr <- strsplit(rna_filt$AD, ",")
 rna_filt$REF.COUNTS <- as.numeric(list_n_item(expr, 1))
 rna_filt$ALT.COUNTS <- as.numeric(list_n_item(expr, 2))
 
@@ -126,11 +124,10 @@ if (!is.null(opt$phase)){
   singleUnphased <- rna_filt %>%
     mutate(phase = variant %in% wh$variant) %>%
     left_join(rna_filt %>% group_by(gene) %>% summarize(n=n())) %>%
-    dplyr::filter(!phase & n == 1) %>%
-    pull(variant)
+    dplyr::filter(!phase & n == 1)
   
   # Add genotype to unphased gene with one variant (test)
-  rna_filt$GT[which(rna_filt$variant %in% singleUnphased)] <- "1|0"
+  rna_filt$GT[which(rna_filt$variant %in% singleUnphased$variant)] <- "1|0"
   
   # annotate the phased variants as alleleA and alleleB
   rna_filt$alleleA <- ifelse(rna_filt$GT == "1|0", rna_filt$ALT, rna_filt$REF)
@@ -179,10 +176,9 @@ if (!is.null(opt$phase)){
   ASEresults_1s_haplotypesKnown <- runMBASED(ASESummarizedExperiment=mySample,
                                              isPhased=TRUE,
                                              numSim=10^6,
-                                             BPPARAM = MulticoreParam(workers = 20))
+                                             BPPARAM = MulticoreParam(workers = threads))
   
   saveRDS(ASEresults_1s_haplotypesKnown, file=paste0(out, "/ASEresults_1s_haplotypesKnown.rds"))
-  
   # extract results
   results <- summarizeASEResults_1s(ASEresults_1s_haplotypesKnown)
   
@@ -191,8 +187,9 @@ if (!is.null(opt$phase)){
   results$geneOutput$significance <- as.factor(ifelse(results$geneOutput$padj < 0.05, "padj < 0.05", "padj > 0.05"))
   results$geneOutput$gene <- rownames(results$geneOutput)
   
+  results$geneOutput$allele1IsMajor[results$geneOutput$gene %in% singleUnphased$gene] = NA
+  
   # add the locus
-  results$geneOutput$geneBand <- rna_filt$gene_locus[match(results$geneOutput$gene, rna_filt$gene)]
   results$geneOutput$geneBiotype <- rna_filt$gene_biotype[match(results$geneOutput$gene, rna_filt$gene)]
 
 ### WITHOUT PHASING
@@ -234,7 +231,7 @@ if (!is.null(opt$phase)){
   ASEresults_1s_haplotypesUnknown <- runMBASED(ASESummarizedExperiment=mySample,
                                                isPhased=FALSE,
                                                numSim=10^6,
-                                               BPPARAM = MulticoreParam(workers = 20))
+                                               BPPARAM = MulticoreParam(workers = threads))
   saveRDS(ASEresults_1s_haplotypesUnknown, file=paste0(out, "/ASEresults_1s_haplotypesUnknown.rds"))
   
   # extract results
@@ -246,7 +243,6 @@ if (!is.null(opt$phase)){
   results$geneOutput$gene <- rownames(results$geneOutput)
   
   # add the locus
-  results$geneOutput$geneBand <- rna_filt$gene_locus[match(results$geneOutput$gene, rna_filt$gene)]
   results$geneOutput$geneBiotype <- rna_filt$gene_biotype[match(results$geneOutput$gene, rna_filt$gene)]
   
 } 
@@ -254,3 +250,4 @@ if (!is.null(opt$phase)){
 # save the results 
 saveRDS(results, file=paste0(out, "/MBASEDresults.rds"))
 print("Finished MBASED")
+

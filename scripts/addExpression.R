@@ -1,5 +1,3 @@
-#!/gsc/software/linux-x86_64-centos7/R-4.0.2/bin/Rscript --vanilla
-.libPaths("/projects/vporter_prj/R/x86_64-centos7-linux-gnu-library/4.0")
 
 ## ---------------------------------------------------------------------------
 ## ADD THE RPKM AND FILTER THE ASE GENES
@@ -52,18 +50,18 @@ sample <- ifelse(length(grep("-", sample)) == 0, sample, gsub("-", ".", sample))
 rpkm_sample <- rpkm[,c("gene", sample)] 
 
 # expressed genes in the sample
-results$geneOutput$RPKM <- rpkm_sample[match(results$geneOutput$gene, rpkm_sample$gene), 2]
+results$geneOutput$RPKM <- rpkm_sample[match(results$geneOutput$gene, gsub(" ", "", rpkm_sample$gene, fixed = TRUE)), 2]
 results_filt <- results$geneOutput[results$geneOutput$RPKM > min, ]
 
 # filter for genes that have an RPKM calculated
-results_filt <- results_filt[complete.cases(results_filt),]
+results_filt <- results_filt[!is.na(results_filt$RPKM),] 
 
 # MAF filter
 results_filt$MAF <- as.factor(ifelse(results_filt$majorAlleleFrequency > 0.75, "MAF > 0.75", "MAF < 0.75"))
 results_filt$aseResults <- as.factor(ifelse(results_filt$majorAlleleFrequency > 0.75 & results_filt$padj < 0.05, "ASE", "BAE"))
 
 # rearrange columns to a logical orger
-results_filt <- results_filt[,c("gene", "geneBiotype", "geneBand", "RPKM", "allele1IsMajor","majorAlleleFrequency", 
+results_filt <- results_filt[,c("gene", "geneBiotype", "RPKM", "allele1IsMajor","majorAlleleFrequency", 
                                 "pValueASE", "pValueHeterogeneity", "padj",
                                 "significance", "MAF", "aseResults")]
 

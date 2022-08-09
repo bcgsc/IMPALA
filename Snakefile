@@ -2,9 +2,11 @@
 configfile: "config/defaults.yaml"
 configfile: "config/samples.yaml"
 configfile: "config/parameters.yaml"
+configfile: "config/annotationPaths.yaml"
 
 # path to the reference genome fasta
 genome_path = config["genome"][config["genome_name"]]
+genome_name = {"hg19": "GRCh37.75", "hg38": "GRCh38.100", "hg38_no_alt_TCGA_HTMCP_HPVs": "GRCh38.100"}[config["genome_name"]]
 
 # Ensembl 100 genes
 gene_anno = config["annotation"][config["genome_name"]]
@@ -16,69 +18,88 @@ rpkm_path = config["matrix"]
 samples_dict = config["samples"]
 sample_ids = samples_dict.keys()
 
+# Check phased
+phased = config["phased"]
 ### -------------------------------------------------------------------
 ### Target rule
 ### -------------------------------------------------------------------
 rule all:
     input:
-	    expand("output/{sample}/mBASED/sankeyPlot.html",sample=sample_ids)
+	    expand("output/{sample}/mBASED/chromPlot.pdf",sample=sample_ids)
+
 
 ### -------------------------------------------------------------------
-### Call and filter the DNA SNVs
+### Call and filter the phase vcf
 ### -------------------------------------------------------------------
 
-rule dna_snv_calling:
-    input:
-        bam = lambda w: config["samples"][w.sample]["dna"],
-        ref = genome_path,
-        bed = gene_anno
+rule phase_vcf_filter:
+    input: 
+        phase = lambda w: config["samples"][w.sample]["phase"]
     output:
-        "output/{sample}/StrelkaDNA/results/variants/genome.S1.vcf.gz"
-    conda: "config/strelka.yaml"
-    threads: 20
+        "output/{sample}/phase.het.pass.snps.vcf.gz"
+    singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
+    log: "output/{sample}/log/phase_vcf_filter.log"
     shell:
-        """
-        configureStrelkaGermlineWorkflow.py --bam={input.bam} --referenceFasta={input.ref} --callRegions={input.bed} --rna --runDir=output/{wildcards.sample}/StrelkaDNA
-        output/{wildcards.sample}/StrelkaDNA/runWorkflow.py -m local -j {threads}
-        """
+        "zcat {input.phase} | grep -E '(PASS|#)' | grep -E '(0/1|\||#)' | awk '/^#/||length($4)==1 && length($5)==1' | bgzip > {output} 2> {log}"
 
-rule dna_snv_filt:
-    input:
-        vcf = "output/{sample}/StrelkaDNA/results/variants/genome.S1.vcf.gz"
-    output:
-        "output/{sample}/dna.het.pass.snps.vcf.gz"
-    conda: "config/ase-env.yaml"
-    shell:
-        "zcat {input.vcf} | grep -E '(PASS|#)' | grep -E '(0/1|#)' | awk '/^#/||length($4)==1 && length($5)==1' | bgzip > {output}"
 
-rule dna_snv_index:
+rule phase_vcf_index:
     input:
-        vcf = "output/{sample}/dna.het.pass.snps.vcf.gz"
+        vcf = "output/{sample}/phase.het.pass.snps.vcf.gz"
     output:
-        "output/{sample}/dna.het.pass.snps.vcf.gz.tbi"
-    conda: "config/ase-env.yaml"
+        "output/{sample}/phase.het.pass.snps.vcf.gz.tbi"
+    log: "output/{sample}/log/phase_vcf_index.log"
+    singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     shell:
-        "tabix {input.vcf}"
+        "tabix {input.vcf} &> {log}"
 
 ### -------------------------------------------------------------------
 ### Call and filter the RNA SNVs
 ### -------------------------------------------------------------------
 
-rule rna_snv_calling:
-    input:
-        bam = lambda w: config["samples"][w.sample]["rna"],
-        vcf = "output/{sample}/dna.het.pass.snps.vcf.gz",
-        ref = genome_path,
-        index = "output/{sample}/dna.het.pass.snps.vcf.gz.tbi"
-    output:
-        "output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz"
-    conda: "config/strelka.yaml"
-    threads: 20
-    shell:
-        """
-        configureStrelkaGermlineWorkflow.py --bam={input.bam} --referenceFasta={input.ref} --forcedGT={input.vcf} --rna --runDir=output/{wildcards.sample}/StrelkaRNA
-        output/{wildcards.sample}/StrelkaRNA/runWorkflow.py -m local -j {threads}
-        """
+if phased:
+	rule rna_snv_calling:
+	    input:
+        	bam = lambda w: config["samples"][w.sample]["rna"],
+        	vcf = "output/{sample}/phase.het.pass.snps.vcf.gz",
+        	ref = genome_path,
+        	index = "output/{sample}/phase.het.pass.snps.vcf.gz.tbi"
+    	output:
+        	"output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz"
+    	conda: "config/strelka.yaml"
+    	singularity: "docker://quay.io/biocontainers/strelka:2.9.10--h9ee0642_1"
+    	log: "output/{sample}/log/rna_snv_calling.log"
+    	threads: 20
+    	shell:
+        	"""
+        	configureStrelkaGermlineWorkflow.py \
+			--bam={input.bam} \
+			--referenceFasta={input.ref} \
+			--forcedGT={input.vcf} \
+			--rna \
+			--runDir=output/{wildcards.sample}/StrelkaRNA &> {log}
+        	output/{wildcards.sample}/StrelkaRNA/runWorkflow.py -m local -j {threads} &> {log}
+        	"""
+else:
+	rule rna_snv_calling:
+            input:
+                bam = lambda w: config["samples"][w.sample]["rna"],
+                ref = genome_path,
+        output:
+                "output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz"
+        conda: "config/strelka.yaml"
+        singularity: "docker://quay.io/biocontainers/strelka:2.9.10--h9ee0642_1"
+        log: "output/{sample}/log/rna_snv_calling.log"
+        threads: 20
+        shell:
+                """
+                configureStrelkaGermlineWorkflow.py \
+                        --bam={input.bam} \
+                        --referenceFasta={input.ref} \
+                        --rna \
+                        --runDir=output/{wildcards.sample}/StrelkaRNA &> {log}
+                output/{wildcards.sample}/StrelkaRNA/runWorkflow.py -m local -j {threads} &> {log}
+                """
 
 rule pass_filt:
     input:
@@ -86,8 +107,10 @@ rule pass_filt:
     output:
         "output/{sample}/rna.forceGT.pass.vcf.gz"
     conda: "config/ase-env.yaml"
+    singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
+    log: "output/{sample}/log/pass_filt.log"
     shell:
-        "zcat {input.vcf} | grep -E '(PASS|#)' | bgzip > {output}"
+        "zcat {input.vcf} | grep -E '(PASS|#)' | bgzip > {output} 2> {log}"
 
 rule rna_snv_index:
     input:
@@ -95,65 +118,139 @@ rule rna_snv_index:
     output:
         "output/{sample}/rna.forceGT.pass.vcf.gz.tbi"
     conda: "config/ase-env.yaml"
+    singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
+    log: "output/{sample}/log/rna_snv_index.log"
     shell:
-        "tabix {input.vcf}"
+        "tabix {input.vcf} &> {log}"
 
-rule intersect:
-    input:
-        vcf1 = "output/{sample}/dna.het.pass.snps.vcf.gz",
-        vcf2 = "output/{sample}/rna.forceGT.pass.vcf.gz",
-        index = "output/{sample}/rna.forceGT.pass.vcf.gz.tbi"
+### -------------------------------------------------------------------
+### Intersect RNA VCF with Phased VCF
+### -------------------------------------------------------------------
+if phased:
+	rule intersect:
+    		input:
+        		vcf1 = "output/{sample}/phase.het.pass.snps.vcf.gz",
+        		vcf2 = "output/{sample}/rna.forceGT.pass.vcf.gz",
+        		index = "output/{sample}/rna.forceGT.pass.vcf.gz.tbi"
+    		output:
+        		"output/{sample}/rna.isec.snps.vcf"
+    		conda: "config/ase-env.yaml"
+    		singularity: "docker://quay.io/biocontainers/bcftools:1.15--h0ea216a_2"
+    		log: "output/{sample}/log/intersect.log"
+    		shell:
+        		"""
+        		bcftools isec {input.vcf2} {input.vcf1} -p output/{wildcards.sample}/isec -n =2 -w 1 &> {log}
+        		mv output/{wildcards.sample}/isec/0000.vcf {output}
+        		"""
+
+	rule intersect_gz:
+		input: "output/{sample}/rna.isec.snps.vcf"
+    		output: "output/{sample}/rna.isec.snps.vcf.gz"
+    		conda: "config/ase-env.yaml"
+    		singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
+    		log: "output/{sample}/log/intersect_gz.log"
+    		shell: "bgzip {input} &> {log}"
+	vcf = "output/{sample}/rna.isec.snps.vcf.gz"
+else:
+	vcf = "output/{sample}/rna.forceGT.pass.vcf.gz"
+
+
+### -------------------------------------------------------------------
+### Annotate and filter VCF with genes
+### -------------------------------------------------------------------
+
+rule snpEff:
+    input: vcf
     output:
-        "output/{sample}/rna.isec.dna.snps.vcf"
-    conda: "config/ase-env.yaml"
+        "output/{sample}/rna.isec.snps.snpEff.vcf"
+    singularity: "docker://quay.io/biocontainers/snpeff:5.0--hdfd78af_1"
+    params:
+        genome = genome_name,
+        snpEff_config = config["annotationPath"]["snpEff_config"],
+        snpEff_datadir = config["annotationPath"]["snpEff_datadir"]
+    log: "output/{sample}/log/snpEff.log"
     shell:
         """
-        bcftools isec {input.vcf2} {input.vcf1} -p output/{wildcards.sample}/isec -n =2 -w 1
-        mv output/{wildcards.sample}/isec/0000.vcf {output}
+            snpEff -Xmx64g \
+            -v {params.genome} \
+            -c {params.snpEff_config} \
+            -dataDir {params.snpEff_datadir} \
+            -noStats \
+            {input} > {output} 2> {log}
         """
 
-rule intersect_gz:
-    input:
-        "output/{sample}/rna.isec.dna.snps.vcf"
+rule snpSift:
+    input: "output/{sample}/rna.isec.snps.snpEff.vcf"
     output:
-        "output/{sample}/rna.isec.dna.snps.vcf.gz"
-    conda: "config/ase-env.yaml"
+        geneFilter = "output/{sample}/rna.isec.filterSnps.vcf",
+        tsv = "output/{sample}/rna.isec.filterSnps.tsv"
+    singularity: "docker://quay.io/biocontainers/snpsift:5.1d--hdfd78af_0"
+    log: "output/{sample}/log/snpSift.log"
     shell:
-        "bgzip {input}"
+        """
+        SnpSift -Xmx64g filter "( exists ANN[0].GENE )" {input} > {output.geneFilter} 2> {log}
 
-rule intersect_genes:
-    input:
-        vcf = "output/{sample}/rna.isec.dna.snps.vcf.gz",
-        bed = gene_anno
-    output:
-        "output/{sample}/rna.isec.dna.snps.genes.vcf.gz"
-    conda: "config/ase-env.yaml"
-    shell:
-        "bedtools intersect -loj -a {input.vcf} -b {input.bed} | cut -f 1-10,14,17,18 > {output}"
+        SnpSift -Xmx64g extractFields {output.geneFilter} \
+            CHROM POS GEN[0].AD ALT REF ANN[0].GENE ANN[0].BIOTYPE > {output.tsv} 2> {log}
+        """
 
 ### -------------------------------------------------------------------
 ### Run MBASED
 ### -------------------------------------------------------------------
 
-rule mbased:
-    input:
-        phase = lambda w: config["samples"][w.sample]["phase"],
-        vcf = "output/{sample}/rna.isec.dna.snps.genes.vcf.gz",
-    output:
-        "output/{sample}/mBASED/MBASEDresults.rds"
-    threads: 20
-    shell:
-        "scripts/mbased.R --phase={input.phase} --rna={input.vcf} --outdir=output/{wildcards.sample}/mBASED"
+if phased:
+	rule mbased:
+    		input:
+        		phase = lambda w: config["samples"][w.sample]["phase"],
+        		tsv = "output/{sample}/rna.isec.filterSnps.tsv",
+    		output:
+        		"output/{sample}/mBASED/MBASEDresults.rds"
+    		threads: 20
+    		log: "output/{sample}/log/mbased.log"
+		singularity: "docker://glenn032787/ase_rcontainer:1.0"
+    		shell:
+        		"""
+			Rscript scripts/mbased.snpEff.R \
+				--threads={threads} \
+				--phase={input.phase} \
+				--rna={input.tsv} \
+				--outdir=output/{wildcards.sample}/mBASED &> {log}
+			"""
+else:
+	rule mbased:
+                input:
+                        tsv = "output/{sample}/rna.isec.filterSnps.tsv",
+                output:
+                        "output/{sample}/mBASED/MBASEDresults.rds"
+                threads: 20
+		singularity: "docker://glenn032787/ase_rcontainer:1.0"
+                log: "output/{sample}/log/mbased.log"
+                shell:
+                        """
+                        Rscript scripts/mbased.snpEff.R \
+                                --threads={threads} \
+                                --rna={input.tsv} \
+                                --outdir=output/{wildcards.sample}/mBASED &> {log}
+                        """
+	
 
 rule addExpression:
     input:
         rds = "output/{sample}/mBASED/MBASEDresults.rds",
-        vcf = "output/{sample}/rna.isec.dna.snps.genes.vcf.gz",
         rpkm = rpkm_path
     output:
         "output/{sample}/mBASED/MBASED_expr_gene_results.txt"
+    singularity: "docker://glenn032787/ase_rcontainer:1.0"
+    log: "output/{sample}/log/addExpression.log"
     shell:
-        "scripts/addExpression.R --mbased={input.rds} --sample={wildcards.sample} --rpkm={input.rpkm} --min=1 --outdir=output/{wildcards.sample}/mBASED"
+	"""
+	Rscript scripts/addExpression.R \
+		--mbased={input.rds} \
+		--sample={wildcards.sample} \
+		--rpkm={input.rpkm} \
+		--min=1 \
+		--outdir=output/{wildcards.sample}/mBASED &> {log}
+	"""
 
 rule figures:
     input:
@@ -161,6 +258,31 @@ rule figures:
         bed = gene_anno,
         rpkm = rpkm_path
     output:
-        "output/{sample}/mBASED/sankeyPlot.html"
+        "output/{sample}/mBASED/chromPlot.pdf"
+    singularity: "docker://glenn032787/ase_rcontainer:1.0"
+    log: "output/{sample}/log/figures.log"
     shell:
-        "scripts/figures.R --mbased={input.txt} --rpkm={input.rpkm} --gene={input.bed} --sample={wildcards.sample} --outdir=output/{wildcards.sample}/mBASED"
+	"""
+	Rscript scripts/figures.R \
+		--mbased={input.txt} \
+		--rpkm={input.rpkm} \
+		--gene={input.bed} \
+		--sample={wildcards.sample} \
+		--outdir=output/{wildcards.sample}/mBASED &> {log}
+	"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,5 +1,3 @@
-#!/gsc/software/linux-x86_64-centos7/R-4.0.2/bin/Rscript --vanilla
-.libPaths("/projects/vporter_prj/R/x86_64-centos7-linux-gnu-library/4.0")
 
 ## ---------------------------------------------------------------------------
 ## Allelic Imbalance in Expression using MBASED, part 2
@@ -111,23 +109,6 @@ barplot <- ggplot(df, aes(x = chr, fill = colour_filt)) +
 
 ggsave(filename = paste0(out, "/aseGenesBar.pdf"), plot = barplot, width = 12, height = 5, units = "in")
 
-####
-#### CHROMPLOT
-####
-
-genes1 <- df[df$colour_filt == "MAF > 0.75 & padj < 0.05","gene"]
-genes2 <- df[df$colour_filt != "MAF > 0.75 & padj < 0.05","gene"]
-
-bed1 <- data.frame(Chrom = all_genes$V1[all_genes$V4 %in% genes1], 
-                   Start = all_genes$V2[all_genes$V4 %in% genes1],
-                   End = all_genes$V3[all_genes$V4 %in% genes1])
-bed2 <- data.frame(Chrom = all_genes$V1[all_genes$V4 %in% genes2], 
-                   Start = all_genes$V2[all_genes$V4 %in% genes2],
-                   End = all_genes$V3[all_genes$V4 %in% genes2])
-
-pdf(paste0(out, "/chromPlot.pdf"), width = 9, height = 8)
-chromPlot(gaps=hg_gap, annot1=bed1, annot2 = bed2, colAnnot1 = "#e74645", colAnnot2 = "grey",  bands=hg_cytoBandIdeo, bin = 1000000, chrSide=c(-1,1,1,1,1,1,1,1))
-dev.off()
 
 ####
 #### SANKEY PLOT
@@ -174,5 +155,24 @@ sankey <- sankeyNetwork(Links = links, Nodes = nodes,
                         sinksRight=FALSE, fontSize = 18)
 
 saveWidget(sankey, file=paste0(out, "/sankeyPlot.html"), selfcontained = F)
+
+####
+#### CHROMPLOT
+####
+
+genes1 <- df[df$colour_filt == "MAF > 0.75 & padj < 0.05","gene"]
+genes2 <- df[df$colour_filt != "MAF > 0.75 & padj < 0.05","gene"]
+
+bed1 <- data.frame(Chrom = all_genes$V1[all_genes$V4 %in% genes1], 
+                   Start = all_genes$V2[all_genes$V4 %in% genes1],
+                   End = all_genes$V3[all_genes$V4 %in% genes1])
+bed2 <- data.frame(Chrom = all_genes$V1[all_genes$V4 %in% genes2], 
+                   Start = all_genes$V2[all_genes$V4 %in% genes2],
+                   End = all_genes$V3[all_genes$V4 %in% genes2])
+
+pdf(paste0(out, "/chromPlot.pdf"), width = 9, height = 8)
+chromPlot(gaps=hg_gap, annot1=bed1, annot2 = bed2, colAnnot1 = "#e74645", colAnnot2 = "grey",  bands=hg_cytoBandIdeo, bin = 1000000, chrSide=c(-1,1,1,1,1,1,1,1))
+dev.off()
+
 
 print("Figures completed")

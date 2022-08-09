@@ -15,16 +15,28 @@ git clone https://svn.bcgsc.ca/bitbucket/scm/marra/vporter-allelespecificexpress
 parameters.yaml: <br />
 - Choose a genome to use (hg38/hg19/hg38_no_alt_TCGA_HTMCP_HPVs)
 - Specify the path to the RPKM matrix that contains the sample (can include multiple samples but sample id must be in the column names)
+- Choose to include phased genome 
 
 samples.yaml: <br />
 - Make sure to name the sample(s) the same identifier as the matching RPKM matrix column name
 - Add the paths to the DNA-seq and RNA-seq Illumina bam files and the phased VCF file 
+- Do not need to add phased VCF file is phased is false
+
+annotationPaths.yaml: <br />
+- Use to specify paths to snpEff databases and config file
+- Does not need to be changed if running on GSC servers
+
+## **Input**
+
+1. RNA-seq Illumina Bam File
+2. Phased VCF (from whatshap)
+3. Expression Matrix (RPKM units, Column name "Gene" and Sample names)
 
 ## **Run snakemake**
-Right now conda environments are used, but it would be good to eventually change this to docker containers. You can choose the number of max threads to use with `-c`. This is the command to run:
+You can choose the number of max threads to use with `-c`. This is the command to run:
 
 ```
-snakemake --use-conda -c 30
+snakemake -c 30 --use-singularity --singularity-args "-B /projects,/home,/gsc"
 ```
 
 # Outputs

@@ -1,0 +1,7 @@
+annotationPath:
+    snpEff_config:
+        "/gsc/resources/annotation/snpeff/snpEff.config"
+    snpEff_datadir:
+        "/gsc/resources/annotation/snpeff/snpeff_binaries/5.0/data/"
+
+    

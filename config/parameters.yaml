@@ -1,10 +1,13 @@
 ### Genome version considerations
 
 # genome_name should match bams
-genome_name: "hg38_no_alt_TCGA_HTMCP_HPVs"
+genome_name: "hg38"
 
 # RPKM matrix of the samples
-matrix: "/projects/vporter_prj/projects/cxca_hiv_cohort/rawdata/rna-seq/NCI_ensembl69_stranded_RPKM_matrix_123samples_HUGOnoDups.txt"
+matrix: /projects/glchang_prj/POG_preprocess/expression_matrix.tsv
+
+# Use phased vcf or pseudophasing algorithm (True or False)
+phased: False
 
 ### Defaults that can be left alone safely
 

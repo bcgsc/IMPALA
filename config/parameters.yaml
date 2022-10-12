@@ -4,12 +4,8 @@
 genome_name: "hg38"
 
 # RPKM matrix of the samples
-matrix: /projects/glchang_prj/POG_preprocess/expression_matrix.tsv
+matrix:  /projects/koneill_scratch/pog_tmp/GM24385/rna/rsem/expression_matrix.tsv
 
-# Use phased vcf or pseudophasing algorithm (True or False)
-phased: False
-
-### Defaults that can be left alone safely
-
-output_dir: "ase-out"
-temp_dir:
+# Use phased vcf (True or False)
+# Uses pseudphasing algorithm if False
+phased: True

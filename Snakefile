@@ -40,7 +40,7 @@ rule phase_vcf_filter:
     singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     log: "output/{sample}/log/phase_vcf_filter.log"
     shell:
-        "zcat {input.phase} | grep -E '(PASS|#)' | grep -E '(0/1|\||#)' | awk '/^#/||length($4)==1 && length($5)==1' | bgzip > {output} 2> {log}"
+        "cat {input.phase} | grep -E '(PASS|#)' | grep -E '(0/1|\||#)' | awk '/^#/||length($4)==1 && length($5)==1' | bgzip > {output} 2> {log}"
 
 
 rule phase_vcf_index:
@@ -235,41 +235,40 @@ else:
 	
 
 rule addExpression:
-    input:
-        rds = "output/{sample}/mBASED/MBASEDresults.rds",
-        rpkm = rpkm_path
-    output:
-        "output/{sample}/mBASED/MBASED_expr_gene_results.txt"
-    singularity: "docker://glenn032787/ase_rcontainer:1.0"
-    log: "output/{sample}/log/addExpression.log"
-    shell:
-	"""
-	Rscript scripts/addExpression.R \
-		--mbased={input.rds} \
-		--sample={wildcards.sample} \
-		--rpkm={input.rpkm} \
-		--min=1 \
-		--outdir=output/{wildcards.sample}/mBASED &> {log}
-	"""
+	input:
+		rds = "output/{sample}/mBASED/MBASEDresults.rds",
+		rpkm = rpkm_path
+	output: "output/{sample}/mBASED/MBASED_expr_gene_results.txt"
+	singularity: "docker://glenn032787/ase_rcontainer:1.0"
+	log: "output/{sample}/log/addExpression.log"
+	shell:
+		"""
+		Rscript scripts/addExpression.R \
+			--mbased={input.rds} \
+			--sample={wildcards.sample} \
+			--rpkm={input.rpkm} \
+			--min=1 \
+			--outdir=output/{wildcards.sample}/mBASED &> {log}
+		"""
 
 rule figures:
-    input:
-        txt = "output/{sample}/mBASED/MBASED_expr_gene_results.txt",
-        bed = gene_anno,
-        rpkm = rpkm_path
-    output:
-        "output/{sample}/mBASED/chromPlot.pdf"
-    singularity: "docker://glenn032787/ase_rcontainer:1.0"
-    log: "output/{sample}/log/figures.log"
-    shell:
-	"""
-	Rscript scripts/figures.R \
-		--mbased={input.txt} \
-		--rpkm={input.rpkm} \
-		--gene={input.bed} \
-		--sample={wildcards.sample} \
-		--outdir=output/{wildcards.sample}/mBASED &> {log}
-	"""
+	input:
+		txt = "output/{sample}/mBASED/MBASED_expr_gene_results.txt",
+		bed = gene_anno,
+		rpkm = rpkm_path
+	output:
+		"output/{sample}/mBASED/chromPlot.pdf"
+	singularity: "docker://glenn032787/ase_rcontainer:1.0"
+	log: "output/{sample}/log/figures.log"
+	shell:
+		"""
+		Rscript scripts/figures.R \
+			--mbased={input.txt} \
+			--rpkm={input.rpkm} \
+			--gene={input.bed} \
+			--sample={wildcards.sample} \
+			--outdir=output/{wildcards.sample}/mBASED &> {log}
+		"""
 
 
 

@@ -65,8 +65,8 @@ if phased:
         	ref = genome_path,
         	index = "output/{sample}/phase.het.pass.snps.vcf.gz.tbi"
     	output:
-        	"output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz"
-    	conda: "config/strelka.yaml"
+        	temp("output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz")
+    	conda: "config/conda/strelka.yaml"
     	singularity: "docker://quay.io/biocontainers/strelka:2.9.10--h9ee0642_1"
     	log: "output/{sample}/log/rna_snv_calling.log"
     	threads: 20
@@ -78,7 +78,9 @@ if phased:
 			--forcedGT={input.vcf} \
 			--rna \
 			--runDir=output/{wildcards.sample}/StrelkaRNA &> {log}
-        	output/{wildcards.sample}/StrelkaRNA/runWorkflow.py -m local -j {threads} &> {log}
+
+        	output/{wildcards.sample}/StrelkaRNA/runWorkflow.py -m local -j {threads} &> {log} && \
+			rm -rf output/{wildcards.sample}/StrelkaRNA
         	"""
 else:
 	rule rna_snv_calling:
@@ -86,8 +88,8 @@ else:
                 bam = lambda w: config["samples"][w.sample]["rna"],
                 ref = genome_path,
         output:
-                "output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz"
-        conda: "config/strelka.yaml"
+                temp("output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz")
+        conda: "config/conda/strelka.yaml"
         singularity: "docker://quay.io/biocontainers/strelka:2.9.10--h9ee0642_1"
         log: "output/{sample}/log/rna_snv_calling.log"
         threads: 20
@@ -98,15 +100,16 @@ else:
                         --referenceFasta={input.ref} \
                         --rna \
                         --runDir=output/{wildcards.sample}/StrelkaRNA &> {log}
-                output/{wildcards.sample}/StrelkaRNA/runWorkflow.py -m local -j {threads} &> {log}
+                output/{wildcards.sample}/StrelkaRNA/runWorkflow.py -m local -j {threads} &> {log} && \
+				rm -rf output/{wildcards.sample}/StrelkaRNA
                 """
 
 rule pass_filt:
     input:
         vcf="output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz"
     output:
-        "output/{sample}/rna.forceGT.pass.vcf.gz"
-    conda: "config/ase-env.yaml"
+        temp("output/{sample}/rna.forceGT.pass.vcf.gz")
+    conda: "config/conda/ase-env.yaml"
     singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     log: "output/{sample}/log/pass_filt.log"
     shell:
@@ -116,7 +119,7 @@ rule rna_snv_index:
     input:
         vcf = "output/{sample}/rna.forceGT.pass.vcf.gz"
     output:
-        "output/{sample}/rna.forceGT.pass.vcf.gz.tbi"
+        temp("output/{sample}/rna.forceGT.pass.vcf.gz.tbi")
     conda: "config/ase-env.yaml"
     singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     log: "output/{sample}/log/rna_snv_index.log"
@@ -133,20 +136,21 @@ if phased:
         		vcf2 = "output/{sample}/rna.forceGT.pass.vcf.gz",
         		index = "output/{sample}/rna.forceGT.pass.vcf.gz.tbi"
     		output:
-        		"output/{sample}/rna.isec.snps.vcf"
-    		conda: "config/ase-env.yaml"
+        		temp("output/{sample}/rna.isec.snps.vcf")
+    		conda: "config/conda/ase-env.yaml"
     		singularity: "docker://quay.io/biocontainers/bcftools:1.15--h0ea216a_2"
     		log: "output/{sample}/log/intersect.log"
     		shell:
         		"""
-        		bcftools isec {input.vcf2} {input.vcf1} -p output/{wildcards.sample}/isec -n =2 -w 1 &> {log}
-        		mv output/{wildcards.sample}/isec/0000.vcf {output}
+        		bcftools isec {input.vcf2} {input.vcf1} -p output/{wildcards.sample}/isec -n =2 -w 1 &> {log} 
+        		mv output/{wildcards.sample}/isec/0000.vcf {output} 
+				rm -rf isec
         		"""
 
 	rule intersect_gz:
 		input: "output/{sample}/rna.isec.snps.vcf"
-    		output: "output/{sample}/rna.isec.snps.vcf.gz"
-    		conda: "config/ase-env.yaml"
+    		output: temp("output/{sample}/rna.isec.snps.vcf.gz")
+    		conda: "config/conda/ase-env.yaml"
     		singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     		log: "output/{sample}/log/intersect_gz.log"
     		shell: "bgzip {input} &> {log}"
@@ -162,7 +166,7 @@ else:
 rule snpEff:
     input: vcf
     output:
-        "output/{sample}/rna.isec.snps.snpEff.vcf"
+        temp("output/{sample}/rna.isec.snps.snpEff.vcf")
     singularity: "docker://quay.io/biocontainers/snpeff:5.0--hdfd78af_1"
     params:
         genome = genome_name,
@@ -171,7 +175,7 @@ rule snpEff:
     log: "output/{sample}/log/snpEff.log"
     shell:
         """
-            snpEff -Xmx64g \
+        snpEff -Xmx64g \
             -v {params.genome} \
             -c {params.snpEff_config} \
             -dataDir {params.snpEff_datadir} \
@@ -207,7 +211,7 @@ if phased:
         		"output/{sample}/mBASED/MBASEDresults.rds"
     		threads: 20
     		log: "output/{sample}/log/mbased.log"
-		singularity: "docker://glenn032787/ase_rcontainer:1.0"
+			singularity: "docker://glenn032787/ase_rcontainer:1.0"
     		shell:
         		"""
 			Rscript scripts/mbased.snpEff.R \
@@ -218,20 +222,20 @@ if phased:
 			"""
 else:
 	rule mbased:
-                input:
-                        tsv = "output/{sample}/rna.isec.filterSnps.tsv",
-                output:
-                        "output/{sample}/mBASED/MBASEDresults.rds"
-                threads: 20
-		singularity: "docker://glenn032787/ase_rcontainer:1.0"
-                log: "output/{sample}/log/mbased.log"
-                shell:
-                        """
-                        Rscript scripts/mbased.snpEff.R \
-                                --threads={threads} \
-                                --rna={input.tsv} \
-                                --outdir=output/{wildcards.sample}/mBASED &> {log}
-                        """
+			input:
+				tsv = "output/{sample}/rna.isec.filterSnps.tsv",
+			output:
+				"output/{sample}/mBASED/MBASEDresults.rds"
+			threads: 20
+			singularity: "docker://glenn032787/ase_rcontainer:1.0"
+			log: "output/{sample}/log/mbased.log"
+			shell:
+				"""
+				Rscript scripts/mbased.snpEff.R \
+						--threads={threads} \
+						--rna={input.tsv} \
+						--outdir=output/{wildcards.sample}/mBASED &> {log}
+				"""
 	
 
 rule addExpression:

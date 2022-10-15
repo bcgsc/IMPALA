@@ -40,7 +40,7 @@ rule phase_vcf_filter:
     singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     log: "output/{sample}/log/phase_vcf_filter.log"
     shell:
-        "cat {input.phase} | grep -E '(PASS|#)' | grep -E '(0/1|\||#)' | awk '/^#/||length($4)==1 && length($5)==1' | bgzip > {output} 2> {log}"
+        "zcat -f {input.phase} | grep -E '(PASS|#)' | grep -E '(0/1|\||#)' | awk '/^#/||length($4)==1 && length($5)==1' | bgzip > {output} 2> {log}"
 
 
 rule phase_vcf_index:
@@ -79,8 +79,7 @@ if phased:
 			--rna \
 			--runDir=output/{wildcards.sample}/StrelkaRNA &> {log}
 
-        	output/{wildcards.sample}/StrelkaRNA/runWorkflow.py -m local -j {threads} &> {log} && \
-			rm -rf output/{wildcards.sample}/StrelkaRNA
+        	output/{wildcards.sample}/StrelkaRNA/runWorkflow.py -m local -j {threads} &> {log} 
         	"""
 else:
 	rule rna_snv_calling:
@@ -100,8 +99,7 @@ else:
                         --referenceFasta={input.ref} \
                         --rna \
                         --runDir=output/{wildcards.sample}/StrelkaRNA &> {log}
-                output/{wildcards.sample}/StrelkaRNA/runWorkflow.py -m local -j {threads} &> {log} && \
-				rm -rf output/{wildcards.sample}/StrelkaRNA
+                output/{wildcards.sample}/StrelkaRNA/runWorkflow.py -m local -j {threads} &> {log} 
                 """
 
 rule pass_filt:
@@ -113,7 +111,7 @@ rule pass_filt:
     singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     log: "output/{sample}/log/pass_filt.log"
     shell:
-        "zcat {input.vcf} | grep -E '(PASS|#)' | bgzip > {output} 2> {log}"
+        "zcat {input.vcf} | grep -E '(PASS|#)' | bgzip > {output} 2> {log} && rm -rf output/{wildcards.sample}/StrelkaRNA/"
 
 rule rna_snv_index:
     input:
@@ -144,7 +142,7 @@ if phased:
         		"""
         		bcftools isec {input.vcf2} {input.vcf1} -p output/{wildcards.sample}/isec -n =2 -w 1 &> {log} 
         		mv output/{wildcards.sample}/isec/0000.vcf {output} 
-				rm -rf isec
+			rm -rf isec
         		"""
 
 	rule intersect_gz:
@@ -211,7 +209,7 @@ if phased:
         		"output/{sample}/mBASED/MBASEDresults.rds"
     		threads: 20
     		log: "output/{sample}/log/mbased.log"
-			singularity: "docker://glenn032787/ase_rcontainer:1.0"
+		singularity: "docker://glenn032787/ase_rcontainer:1.0"
     		shell:
         		"""
 			Rscript scripts/mbased.snpEff.R \
@@ -275,17 +273,112 @@ rule figures:
 		"""
 
 
+### -------------------------------------------------------------------
+### Cancer analysis
+### -------------------------------------------------------------------
+
+rule annotateGenes:
+	input: "output/{sample}/mBASED/MBASED_expr_gene_results.txt"
+	output: 
+		bed = "output/{sample}/cancer/raw/gene_annotation.bed",
+		gene = "output/{sample}/cancer/raw/phasedGenes.txt"
+	params:
+		annotation = "annotation/biomart_ensembl100_GRCh38.sorted.bed"
+	log: "output/{sample}/log/annotateGenes.log"
+	shell:	
+		"""
+		mkdir -p output/{wildcards.sample}/cancer/raw
+
+		cat {input} | cut -f1 > {output.gene} 2> {log}
+		awk 'NR == FNR {{ keywords[$1]=1; next; }} {{ if ($4 in keywords) print; }}' {output.gene} {params.annotation} > {output.bed} 2> {log}
+		"""
 
 
+rule genomeLength:
+	input: genome_path + ".fai"
+	output: temp("output/{sample}/cancer/raw/genome.length")
+	log: "output/{sample}/log/genomeLength.log"
+	shell:
+		"""
+		cut -f 1,2 {input} > {output} 2> {log}
+		"""
+	
 
 
+rule promoterSlop:
+	input: 
+		gene = "output/{sample}/cancer/raw/gene_annotation.bed",
+		length = "output/{sample}/cancer/raw/genome.length"
+	output: "output/{sample}/cancer/raw/promoter_annotation.bed"
+	singularity: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
+	log: "output/{sample}/log/promoterSlop.log"
+	shell:
+		"""
+		bedtools slop -l 2000 -r 500 -i {input.gene} -g {input.length} > {output} 2> {log}
+		"""
+
+rule cnv_dmr:
+	input:
+		cnv = lambda w: config["samples"][w.sample]["cnv"],
+		methyl = lambda w: config["samples"][w.sample]["methyl"] 
+	output: 
+		cnv = "output/{sample}/cancer/raw/cnv.bed",
+		methyl = "output/{sample}/cancer/raw/methyl.bed"
+	singularity: "docker://glenn032787/ase_rcontainer:1.0"
+	log: "output/{sample}/log/cnv_dmr.log"
+	shell:
+		"""
+		mkdir -p output/{wildcards.sample}/cancer/raw 
+
+		Rscript scripts/cnv_dmr_process.R \
+			--methyl={input.methyl} \
+			--cnv={input.cnv} \
+			--outdir=output/{wildcards.sample}/cancer/raw &> {log}
+		"""	
+
+rule cnvIntersect:
+	input: 
+		cnv = "output/{sample}/cancer/raw/cnv.bed",
+		gene = "output/{sample}/cancer/raw/gene_annotation.bed"
+	output: "output/{sample}/cancer/intersect/cnv_intersect.bed"
+	singularity: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
+	log: "output/{sample}/log/cnvIntersect.log"
+	shell:
+		"""
+		mkdir -p output/{wildcards.sample}/cancer/intersect
+		bedtools intersect -loj -a {input.gene} -b {input.cnv} | awk '$9 != "." {{print $0}}' > {output} 2> {log}
+		"""
 
 
+rule methylIntersect:
+	input: 
+		methyl = "output/{sample}/cancer/raw/methyl.bed",
+		gene = "output/{sample}/cancer/raw/gene_annotation.bed"
+	output: "output/{sample}/cancer/intersect/methyl_intersect.bed"
+	singularity: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
+	log: "output/{sample}/log/methylIntersect.log"
+	shell:
+		"""
+		mkdir -p output/{wildcards.sample}/cancer/intersect
+		bedtools intersect -loj -a {input.gene} -b {input.methyl} | awk '$9 != "." {{print $0}}' > {output} 2> {log}
+		"""
 
-
-
-
-
-
+rule summaryTable:
+	input:
+		cnv = "output/{sample}/cancer/intersect/cnv_intersect.bed",
+		methyl = "output/{sample}/cancer/intersect/methyl_intersect.bed", 
+		ase = "output/{sample}/mBASED/MBASED_expr_gene_results.txt" 
+	output: "output/{sample}/summaryTable.tsv"
+	singularity: "docker://glenn032787/ase_rcontainer:1.0"
+	log: "output/{sample}/log/summaryTable.log"
+	shell:
+		"""
+		Rscript scripts/summaryTable.R \
+			--cnv={input.cnv} \
+			--methyl={input.methyl} \
+			--ase={input.ase} \
+			--sample={wildcards.sample} \
+			--outdir=output/{wildcards.sample} 2> {log}
+		"""
 
 

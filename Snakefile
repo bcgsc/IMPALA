@@ -36,18 +36,21 @@ rule phase_vcf_filter:
     input: 
         phase = lambda w: config["samples"][w.sample]["phase"]
     output:
-        "output/{sample}/phase.het.pass.snps.vcf.gz"
+        "output/{sample}/1_variant/phase.het.pass.snps.vcf.gz"
     singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     log: "output/{sample}/log/phase_vcf_filter.log"
     shell:
-        "zcat -f {input.phase} | grep -E '(PASS|#)' | grep -E '(0/1|\||#)' | awk '/^#/||length($4)==1 && length($5)==1' | bgzip > {output} 2> {log}"
+        """
+		mkdir output/{wildcards.sample}/1_variant
+		zcat -f {input.phase} | grep -E '(PASS|#)' | grep -E '(0/1|\||#)' | awk '/^#/||length($4)==1 && length($5)==1' | bgzip > {output} 2> {log}
+		"""
 
 
 rule phase_vcf_index:
     input:
-        vcf = "output/{sample}/phase.het.pass.snps.vcf.gz"
+        vcf = "output/{sample}/1_variant/phase.het.pass.snps.vcf.gz"
     output:
-        "output/{sample}/phase.het.pass.snps.vcf.gz.tbi"
+        "output/{sample}/1_variant/phase.het.pass.snps.vcf.gz.tbi"
     log: "output/{sample}/log/phase_vcf_index.log"
     singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     shell:
@@ -61,9 +64,9 @@ if phased:
 	rule rna_snv_calling:
 	    input:
         	bam = lambda w: config["samples"][w.sample]["rna"],
-        	vcf = "output/{sample}/phase.het.pass.snps.vcf.gz",
+        	vcf = "output/{sample}/1_variant/phase.het.pass.snps.vcf.gz",
         	ref = genome_path,
-        	index = "output/{sample}/phase.het.pass.snps.vcf.gz.tbi"
+        	index = "output/{sample}/1_variant/phase.het.pass.snps.vcf.gz.tbi"
     	output:
         	temp("output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz")
     	conda: "config/conda/strelka.yaml"
@@ -106,7 +109,7 @@ rule pass_filt:
     input:
         vcf="output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz"
     output:
-        temp("output/{sample}/rna.forceGT.pass.vcf.gz")
+        temp("output/{sample}/1_variant/rna.forceGT.pass.vcf.gz")
     conda: "config/conda/ase-env.yaml"
     singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     log: "output/{sample}/log/pass_filt.log"
@@ -115,9 +118,9 @@ rule pass_filt:
 
 rule rna_snv_index:
     input:
-        vcf = "output/{sample}/rna.forceGT.pass.vcf.gz"
+        vcf = "output/{sample}/1_variant/rna.forceGT.pass.vcf.gz"
     output:
-        temp("output/{sample}/rna.forceGT.pass.vcf.gz.tbi")
+        temp("output/{sample}/1_variant/rna.forceGT.pass.vcf.gz.tbi")
     conda: "config/ase-env.yaml"
     singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     log: "output/{sample}/log/rna_snv_index.log"
@@ -130,11 +133,11 @@ rule rna_snv_index:
 if phased:
 	rule intersect:
     		input:
-        		vcf1 = "output/{sample}/phase.het.pass.snps.vcf.gz",
-        		vcf2 = "output/{sample}/rna.forceGT.pass.vcf.gz",
-        		index = "output/{sample}/rna.forceGT.pass.vcf.gz.tbi"
+        		vcf1 = "output/{sample}/1_variant/phase.het.pass.snps.vcf.gz",
+        		vcf2 = "output/{sample}/1_variant/rna.forceGT.pass.vcf.gz",
+        		index = "output/{sample}/1_variant/rna.forceGT.pass.vcf.gz.tbi"
     		output:
-        		temp("output/{sample}/rna.isec.snps.vcf")
+        		temp("output/{sample}/1_variant/rna.isec.snps.vcf")
     		conda: "config/conda/ase-env.yaml"
     		singularity: "docker://quay.io/biocontainers/bcftools:1.15--h0ea216a_2"
     		log: "output/{sample}/log/intersect.log"
@@ -142,19 +145,19 @@ if phased:
         		"""
         		bcftools isec {input.vcf2} {input.vcf1} -p output/{wildcards.sample}/isec -n =2 -w 1 &> {log} 
         		mv output/{wildcards.sample}/isec/0000.vcf {output} 
-			rm -rf isec
+				rm -rf isec
         		"""
 
 	rule intersect_gz:
-		input: "output/{sample}/rna.isec.snps.vcf"
-    		output: temp("output/{sample}/rna.isec.snps.vcf.gz")
+		input: "output/{sample}/1_variant/rna.isec.snps.vcf"
+    		output: temp("output/{sample}/1_variant/rna.isec.snps.vcf.gz")
     		conda: "config/conda/ase-env.yaml"
     		singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     		log: "output/{sample}/log/intersect_gz.log"
     		shell: "bgzip {input} &> {log}"
-	vcf = "output/{sample}/rna.isec.snps.vcf.gz"
+	vcf = "output/{sample}/1_variant/rna.isec.snps.vcf.gz"
 else:
-	vcf = "output/{sample}/rna.forceGT.pass.vcf.gz"
+	vcf = "output/{sample}/1_variant/rna.forceGT.pass.vcf.gz"
 
 
 ### -------------------------------------------------------------------
@@ -164,7 +167,7 @@ else:
 rule snpEff:
     input: vcf
     output:
-        temp("output/{sample}/rna.isec.snps.snpEff.vcf")
+        temp("output/{sample}/1_variant/rna.isec.snps.snpEff.vcf")
     singularity: "docker://quay.io/biocontainers/snpeff:5.0--hdfd78af_1"
     params:
         genome = genome_name,
@@ -182,10 +185,10 @@ rule snpEff:
         """
 
 rule snpSift:
-    input: "output/{sample}/rna.isec.snps.snpEff.vcf"
+    input: "output/{sample}/1_variant/rna.isec.snps.snpEff.vcf"
     output:
-        geneFilter = "output/{sample}/rna.isec.filterSnps.vcf",
-        tsv = "output/{sample}/rna.isec.filterSnps.tsv"
+        geneFilter = "output/{sample}/1_variant/rna.isec.filterSnps.vcf",
+        tsv = "output/{sample}/1_variant/rna.isec.filterSnps.tsv"
     singularity: "docker://quay.io/biocontainers/snpsift:5.1d--hdfd78af_0"
     log: "output/{sample}/log/snpSift.log"
     shell:
@@ -204,26 +207,26 @@ if phased:
 	rule mbased:
     		input:
         		phase = lambda w: config["samples"][w.sample]["phase"],
-        		tsv = "output/{sample}/rna.isec.filterSnps.tsv",
+        		tsv = "output/{sample}/1_variant/rna.isec.filterSnps.tsv",
     		output:
-        		"output/{sample}/mBASED/MBASEDresults.rds"
+        		"output/{sample}/2_mBASED/MBASEDresults.rds"
     		threads: 20
     		log: "output/{sample}/log/mbased.log"
-		singularity: "docker://glenn032787/ase_rcontainer:1.0"
+			singularity: "docker://glenn032787/ase_rcontainer:1.0"
     		shell:
         		"""
-			Rscript scripts/mbased.snpEff.R \
-				--threads={threads} \
-				--phase={input.phase} \
-				--rna={input.tsv} \
-				--outdir=output/{wildcards.sample}/mBASED &> {log}
-			"""
+				Rscript scripts/mbased.snpEff.R \
+					--threads={threads} \
+					--phase={input.phase} \
+					--rna={input.tsv} \
+					--outdir=output/{wildcards.sample}/2_mBASED &> {log}
+				"""
 else:
 	rule mbased:
 			input:
-				tsv = "output/{sample}/rna.isec.filterSnps.tsv",
+				tsv = "output/{sample}/1_variant/rna.isec.filterSnps.tsv",
 			output:
-				"output/{sample}/mBASED/MBASEDresults.rds"
+				"output/{sample}/2_mBASED/MBASEDresults.rds"
 			threads: 20
 			singularity: "docker://glenn032787/ase_rcontainer:1.0"
 			log: "output/{sample}/log/mbased.log"
@@ -232,15 +235,15 @@ else:
 				Rscript scripts/mbased.snpEff.R \
 						--threads={threads} \
 						--rna={input.tsv} \
-						--outdir=output/{wildcards.sample}/mBASED &> {log}
+						--outdir=output/{wildcards.sample}/2_mBASED &> {log}
 				"""
 	
 
 rule addExpression:
 	input:
-		rds = "output/{sample}/mBASED/MBASEDresults.rds",
+		rds = "output/{sample}/2_mBASED/MBASEDresults.rds",
 		rpkm = rpkm_path
-	output: "output/{sample}/mBASED/MBASED_expr_gene_results.txt"
+	output: "output/{sample}/2_mBASED/MBASED_expr_gene_results.txt"
 	singularity: "docker://glenn032787/ase_rcontainer:1.0"
 	log: "output/{sample}/log/addExpression.log"
 	shell:
@@ -250,16 +253,16 @@ rule addExpression:
 			--sample={wildcards.sample} \
 			--rpkm={input.rpkm} \
 			--min=1 \
-			--outdir=output/{wildcards.sample}/mBASED &> {log}
+			--outdir=output/{wildcards.sample}/2_mBASED &> {log}
 		"""
 
 rule figures:
 	input:
-		txt = "output/{sample}/mBASED/MBASED_expr_gene_results.txt",
+		txt = "output/{sample}/2_mBASED/MBASED_expr_gene_results.txt",
 		bed = gene_anno,
 		rpkm = rpkm_path
 	output:
-		"output/{sample}/mBASED/chromPlot.pdf"
+		"output/{sample}/2_mBASED/chromPlot.pdf"
 	singularity: "docker://glenn032787/ase_rcontainer:1.0"
 	log: "output/{sample}/log/figures.log"
 	shell:
@@ -269,7 +272,7 @@ rule figures:
 			--rpkm={input.rpkm} \
 			--gene={input.bed} \
 			--sample={wildcards.sample} \
-			--outdir=output/{wildcards.sample}/mBASED &> {log}
+			--outdir=output/{wildcards.sample}/2_mBASED &> {log}
 		"""
 
 
@@ -278,16 +281,16 @@ rule figures:
 ### -------------------------------------------------------------------
 
 rule annotateGenes:
-	input: "output/{sample}/mBASED/MBASED_expr_gene_results.txt"
+	input: "output/{sample}/2_mBASED/MBASED_expr_gene_results.txt"
 	output: 
-		bed = "output/{sample}/cancer/raw/gene_annotation.bed",
-		gene = "output/{sample}/cancer/raw/phasedGenes.txt"
+		bed = "output/{sample}/3_cancer/raw/gene_annotation.bed",
+		gene = "output/{sample}/3_cancer/raw/phasedGenes.txt"
 	params:
 		annotation = "annotation/biomart_ensembl100_GRCh38.sorted.bed"
 	log: "output/{sample}/log/annotateGenes.log"
 	shell:	
 		"""
-		mkdir -p output/{wildcards.sample}/cancer/raw
+		mkdir -p output/{wildcards.sample}/3_cancer/raw
 
 		cat {input} | cut -f1 > {output.gene} 2> {log}
 		awk 'NR == FNR {{ keywords[$1]=1; next; }} {{ if ($4 in keywords) print; }}' {output.gene} {params.annotation} > {output.bed} 2> {log}
@@ -296,7 +299,7 @@ rule annotateGenes:
 
 rule genomeLength:
 	input: genome_path + ".fai"
-	output: temp("output/{sample}/cancer/raw/genome.length")
+	output: temp("output/{sample}/3_cancer/raw/genome.length")
 	log: "output/{sample}/log/genomeLength.log"
 	shell:
 		"""
@@ -307,9 +310,9 @@ rule genomeLength:
 
 rule promoterSlop:
 	input: 
-		gene = "output/{sample}/cancer/raw/gene_annotation.bed",
-		length = "output/{sample}/cancer/raw/genome.length"
-	output: "output/{sample}/cancer/raw/promoter_annotation.bed"
+		gene = "output/{sample}/3_cancer/raw/gene_annotation.bed",
+		length = "output/{sample}/3_cancer/raw/genome.length"
+	output: "output/{sample}/3_cancer/raw/promoter_annotation.bed"
 	singularity: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
 	log: "output/{sample}/log/promoterSlop.log"
 	shell:
@@ -322,52 +325,52 @@ rule cnv_dmr:
 		cnv = lambda w: config["samples"][w.sample]["cnv"],
 		methyl = lambda w: config["samples"][w.sample]["methyl"] 
 	output: 
-		cnv = "output/{sample}/cancer/raw/cnv.bed",
-		methyl = "output/{sample}/cancer/raw/methyl.bed"
+		cnv = "output/{sample}/3_cancer/raw/cnv.bed",
+		methyl = "output/{sample}/3_cancer/raw/methyl.bed"
 	singularity: "docker://glenn032787/ase_rcontainer:1.0"
 	log: "output/{sample}/log/cnv_dmr.log"
 	shell:
 		"""
-		mkdir -p output/{wildcards.sample}/cancer/raw 
+		mkdir -p output/{wildcards.sample}/3_cancer/raw 
 
 		Rscript scripts/cnv_dmr_process.R \
 			--methyl={input.methyl} \
 			--cnv={input.cnv} \
-			--outdir=output/{wildcards.sample}/cancer/raw &> {log}
+			--outdir=output/{wildcards.sample}/3_cancer/raw &> {log}
 		"""	
 
 rule cnvIntersect:
 	input: 
-		cnv = "output/{sample}/cancer/raw/cnv.bed",
-		gene = "output/{sample}/cancer/raw/gene_annotation.bed"
-	output: "output/{sample}/cancer/intersect/cnv_intersect.bed"
+		cnv = "output/{sample}/3_cancer/raw/cnv.bed",
+		gene = "output/{sample}/3_cancer/raw/gene_annotation.bed"
+	output: "output/{sample}/3_cancer/intersect/cnv_intersect.bed"
 	singularity: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
 	log: "output/{sample}/log/cnvIntersect.log"
 	shell:
 		"""
-		mkdir -p output/{wildcards.sample}/cancer/intersect
+		mkdir -p output/{wildcards.sample}/3_cancer/intersect
 		bedtools intersect -loj -a {input.gene} -b {input.cnv} | awk '$9 != "." {{print $0}}' > {output} 2> {log}
 		"""
 
 
 rule methylIntersect:
 	input: 
-		methyl = "output/{sample}/cancer/raw/methyl.bed",
-		gene = "output/{sample}/cancer/raw/gene_annotation.bed"
-	output: "output/{sample}/cancer/intersect/methyl_intersect.bed"
+		methyl = "output/{sample}/3_cancer/raw/methyl.bed",
+		gene = "output/{sample}/3_cancer/raw/gene_annotation.bed"
+	output: "output/{sample}/3_cancer/intersect/methyl_intersect.bed"
 	singularity: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
 	log: "output/{sample}/log/methylIntersect.log"
 	shell:
 		"""
-		mkdir -p output/{wildcards.sample}/cancer/intersect
+		mkdir -p output/{wildcards.sample}/3_cancer/intersect
 		bedtools intersect -loj -a {input.gene} -b {input.methyl} | awk '$9 != "." {{print $0}}' > {output} 2> {log}
 		"""
 
 rule summaryTable:
 	input:
-		cnv = "output/{sample}/cancer/intersect/cnv_intersect.bed",
-		methyl = "output/{sample}/cancer/intersect/methyl_intersect.bed", 
-		ase = "output/{sample}/mBASED/MBASED_expr_gene_results.txt" 
+		cnv = "output/{sample}/3_cancer/intersect/cnv_intersect.bed",
+		methyl = "output/{sample}/3_cancer/intersect/methyl_intersect.bed", 
+		ase = "output/{sample}/2_mBASED/MBASED_expr_gene_results.txt" 
 	output: "output/{sample}/summaryTable.tsv"
 	singularity: "docker://glenn032787/ase_rcontainer:1.0"
 	log: "output/{sample}/log/summaryTable.log"

@@ -11,7 +11,11 @@ matrix:  /projects/glchang_prj/POG_preprocess/expression_matrix.tsv
 phased: True
 
 # Major allele frequency threshold for ASE (0.5 - 0.75)
-maf: 0.75
+maf_threshold: 0.65
 
 # Threads for Strelka and MBASED
 threads: 20
+
+# Perform cancer analysis
+# Need to include CNV data (from ploidetect) and allelic methyation (from NanoMethPhased)
+cancer_analysis: True

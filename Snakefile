@@ -20,12 +20,22 @@ sample_ids = samples_dict.keys()
 
 # Check phased
 phased = config["phased"]
+
+# Check cancer analysis
+cancer_analysis = config["cancer_analysis"]
+
+if cancer_analysis:
+	ruleorder: summaryTableCancer > summaryTable
+else:
+	ruleorder: summaryTable > summaryTableCancer
+
 ### -------------------------------------------------------------------
 ### Target rule
 ### -------------------------------------------------------------------
 rule all:
-    input:
-	    expand("output/{sample}/mBASED/chromPlot.pdf",sample=sample_ids)
+	input:
+		expand("output/{sample}/2_mBASED/chromPlot.pdf",sample=sample_ids),
+		expand("output/{sample}/summaryTable.tsv", sample=sample_ids)
 
 
 ### -------------------------------------------------------------------
@@ -207,12 +217,12 @@ if phased:
 	rule mbased:
     		input:
         		phase = lambda w: config["samples"][w.sample]["phase"],
-        		tsv = "output/{sample}/1_variant/rna.isec.filterSnps.tsv",
+        		tsv = "output/{sample}/1_variant/rna.isec.filterSnps.tsv"
     		output:
         		"output/{sample}/2_mBASED/MBASEDresults.rds"
     		threads: config["threads"]
     		log: "output/{sample}/log/mbased.log"
-			singularity: "docker://glenn032787/ase_rcontainer:1.0"
+		singularity: "docker://glenn032787/ase_rcontainer:1.0"
     		shell:
         		"""
 				Rscript scripts/mbased.snpEff.R \
@@ -220,7 +230,7 @@ if phased:
 					--phase={input.phase} \
 					--rna={input.tsv} \
 					--outdir=output/{wildcards.sample}/2_mBASED &> {log}
-				"""
+			"""
 else:
 	rule mbased:
 			input:
@@ -279,6 +289,14 @@ rule figures:
 			--sample={wildcards.sample} \
 			--maf_threshold={params.maf} \
 			--outdir=output/{wildcards.sample}/2_mBASED &> {log}
+		"""
+
+rule summaryTable:
+	input: "output/{sample}/2_mBASED/MBASED_expr_gene_results.txt"
+	output: "output/{sample}/summaryTable.tsv"
+	shell:
+		"""
+		cut -f 1,3,4,5,8,11 {input} > {output}
 		"""
 
 
@@ -372,7 +390,7 @@ rule methylIntersect:
 		bedtools intersect -loj -a {input.gene} -b {input.methyl} | awk '$9 != "." {{print $0}}' > {output} 2> {log}
 		"""
 
-rule summaryTable:
+rule summaryTableCancer:
 	input:
 		cnv = "output/{sample}/3_cancer/intersect/cnv_intersect.bed",
 		methyl = "output/{sample}/3_cancer/intersect/methyl_intersect.bed", 

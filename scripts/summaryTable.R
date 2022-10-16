@@ -51,7 +51,7 @@ ase <- read.delim(opt$ase,
                   header = T, comment.char = "#", stringsAsFactors = F)
 
 summary_table <- ase %>%
-  dplyr::select(gene, RPKM, allele1IsMajor, majorAlleleFrequency, padj) %>%
+  dplyr::select(gene, RPKM, allele1IsMajor, majorAlleleFrequency, padj, aseResults) %>%
   left_join(cnv, by = "gene") %>%
   left_join(dmr, by = "gene") %>%
   dplyr::mutate(sample = sample) %>%

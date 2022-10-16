@@ -4,8 +4,14 @@
 genome_name: "hg38"
 
 # RPKM matrix of the samples
-matrix:  /projects/koneill_scratch/pog_tmp/GM24385/rna/rsem/expression_matrix.tsv
+matrix:  /projects/glchang_prj/POG_preprocess/expression_matrix.tsv
 
 # Use phased vcf (True or False)
 # Uses pseudphasing algorithm if False
 phased: True
+
+# Major allele frequency threshold for ASE (0.5 - 0.75)
+maf: 0.75
+
+# Threads for Strelka and MBASED
+threads: 20

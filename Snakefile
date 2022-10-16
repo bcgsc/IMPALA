@@ -72,7 +72,7 @@ if phased:
     	conda: "config/conda/strelka.yaml"
     	singularity: "docker://quay.io/biocontainers/strelka:2.9.10--h9ee0642_1"
     	log: "output/{sample}/log/rna_snv_calling.log"
-    	threads: 20
+    	threads: config["threads"]
     	shell:
         	"""
         	configureStrelkaGermlineWorkflow.py \
@@ -94,7 +94,7 @@ else:
         conda: "config/conda/strelka.yaml"
         singularity: "docker://quay.io/biocontainers/strelka:2.9.10--h9ee0642_1"
         log: "output/{sample}/log/rna_snv_calling.log"
-        threads: 20
+        threads: config["threads"]
         shell:
                 """
                 configureStrelkaGermlineWorkflow.py \
@@ -210,7 +210,7 @@ if phased:
         		tsv = "output/{sample}/1_variant/rna.isec.filterSnps.tsv",
     		output:
         		"output/{sample}/2_mBASED/MBASEDresults.rds"
-    		threads: 20
+    		threads: config["threads"]
     		log: "output/{sample}/log/mbased.log"
 			singularity: "docker://glenn032787/ase_rcontainer:1.0"
     		shell:
@@ -227,7 +227,7 @@ else:
 				tsv = "output/{sample}/1_variant/rna.isec.filterSnps.tsv",
 			output:
 				"output/{sample}/2_mBASED/MBASEDresults.rds"
-			threads: 20
+			threads: config["threads"]
 			singularity: "docker://glenn032787/ase_rcontainer:1.0"
 			log: "output/{sample}/log/mbased.log"
 			shell:
@@ -245,6 +245,8 @@ rule addExpression:
 		rpkm = rpkm_path
 	output: "output/{sample}/2_mBASED/MBASED_expr_gene_results.txt"
 	singularity: "docker://glenn032787/ase_rcontainer:1.0"
+	params:
+		maf = config["maf_threshold"]
 	log: "output/{sample}/log/addExpression.log"
 	shell:
 		"""
@@ -253,6 +255,7 @@ rule addExpression:
 			--sample={wildcards.sample} \
 			--rpkm={input.rpkm} \
 			--min=1 \
+			--maf_threshold={params.maf} \
 			--outdir=output/{wildcards.sample}/2_mBASED &> {log}
 		"""
 
@@ -264,6 +267,8 @@ rule figures:
 	output:
 		"output/{sample}/2_mBASED/chromPlot.pdf"
 	singularity: "docker://glenn032787/ase_rcontainer:1.0"
+	params:
+		maf = config["maf_threshold"]
 	log: "output/{sample}/log/figures.log"
 	shell:
 		"""
@@ -272,6 +277,7 @@ rule figures:
 			--rpkm={input.rpkm} \
 			--gene={input.bed} \
 			--sample={wildcards.sample} \
+			--maf_threshold={params.maf} \
 			--outdir=output/{wildcards.sample}/2_mBASED &> {log}
 		"""
 

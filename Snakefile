@@ -39,6 +39,12 @@ rule all:
 
 
 ### -------------------------------------------------------------------
+### Alignment and expression matrix
+### -------------------------------------------------------------------
+
+
+
+### -------------------------------------------------------------------
 ### Call and filter the phase vcf
 ### -------------------------------------------------------------------
 
@@ -51,7 +57,7 @@ rule phase_vcf_filter:
     log: "output/{sample}/log/phase_vcf_filter.log"
     shell:
         """
-		mkdir output/{wildcards.sample}/1_variant
+		mkdir -p output/{wildcards.sample}/1_variant
 		zcat -f {input.phase} | grep -E '(PASS|#)' | grep -E '(0/1|\||#)' | awk '/^#/||length($4)==1 && length($5)==1' | bgzip > {output} 2> {log}
 		"""
 
@@ -155,7 +161,7 @@ if phased:
         		"""
         		bcftools isec {input.vcf2} {input.vcf1} -p output/{wildcards.sample}/isec -n =2 -w 1 &> {log} 
         		mv output/{wildcards.sample}/isec/0000.vcf {output} 
-				rm -rf isec
+			rm -rf output/{wildcards.sample}/isec
         		"""
 
 	rule intersect_gz:

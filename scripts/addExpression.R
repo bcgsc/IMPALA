@@ -60,7 +60,7 @@ results_filt <- results$geneOutput[results$geneOutput$RPKM > min, ]
 results_filt <- results_filt[!is.na(results_filt$RPKM),] 
 
 # MAF filter
-results_filt$MAF <- as.factor(ifelse(results_filt$majorAlleleFrequency > maf_threshold, paste0("MAF > ", maf_threshold), paste0("MAF < ", maf_threshold),))
+results_filt$MAF <- as.factor(ifelse(results_filt$majorAlleleFrequency > maf_threshold, paste0("MAF > ", maf_threshold), paste0("MAF < ", maf_threshold)))
 results_filt$aseResults <- as.factor(ifelse(results_filt$majorAlleleFrequency > maf_threshold & results_filt$padj < 0.05, "ASE", "BAE"))
 
 # rearrange columns to a logical order

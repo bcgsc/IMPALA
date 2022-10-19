@@ -1,10 +1,28 @@
 # sample name must match the sample ID on the RPKM matrix
 samples:
-    GM12878_DNA:
-        dna:
-            /projects/glchang_prj/ASE_snakemake/coriellCellLine/GM12878/GM12878_DNA.sorted.bam 
-        rna:
-            /projects/glchang_prj/ASE_snakemake/coriellCellLine/GM12878/GM12878_RNA.bam 
-        phase:
-            /projects/glchang_prj/ASE_snakemake/coriellCellLine/GM12878/NA12878_Guppy6_Clair3_Passed_WhatsHapPhased.vcf
+    exampleInputAlignment:
+        R1: 
             
+        R2:
+            
+        rna:
+            /path/to/RNA/alignment.bam
+        phase:
+            /path/to/phase.vcf # Does not need to be included if phase = False
+        cnv:
+            /path/to/cnv/data # Does not need to be included if cancer_analysis = False
+        methyl:
+            /path/to/methyl/data.bed # Does not need to be included if cancer_analysis = False
+    exampleInputRead:
+        R1: 
+            /path/to/RNA/short/read/R1_file.fa
+        R2:
+            /path/to/RNA/short/read/R2_file.fa
+        rna:
+            
+        phase:
+            /path/to/phase.vcf 
+        cnv:
+            /path/to/cnv/data
+        methyl:
+            /path/to/methyl/data.bed

@@ -13,9 +13,24 @@ phased: True
 # Major allele frequency threshold for ASE (0.5 - 0.75)
 maf_threshold: 0.65
 
-# Threads for Strelka and MBASED
-threads: 20
+# Threads for STAR, RSEM, Strelka and MBASED  
+threads: 72
 
 # Perform cancer analysis
 # Need to include CNV data (from ploidetect) and allelic methyation (from NanoMethPhased)
-cancer_analysis: True
+cancer_analysis: False
+
+
+# Paths for annotation
+annotationPath:
+    snpEff_config:
+        "/gsc/resources/annotation/snpeff/snpEff.config"
+    snpEff_datadir:
+        "/gsc/resources/annotation/snpeff/snpeff_binaries/5.0/data/"
+
+# Paths for references
+# Only needed if RNA read is provided instead of RNA bam
+starReferencePath:
+    "/projects/glchang_prj/ref/star/hg38"
+rsemReferencePath:
+    "/projects/glchang_prj/ref/RSEM/hg38_no_alt"

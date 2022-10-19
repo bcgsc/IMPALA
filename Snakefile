@@ -2,7 +2,6 @@
 configfile: "config/defaults.yaml"
 configfile: "config/samples.yaml"
 configfile: "config/parameters.yaml"
-configfile: "config/annotationPaths.yaml"
 
 # path to the reference genome fasta
 genome_path = config["genome"][config["genome_name"]]
@@ -34,7 +33,7 @@ else:
 ### -------------------------------------------------------------------
 rule all:
 	input:
-		expand("output/{sample}/2_mBASED/chromPlot.pdf",sample=sample_ids),
+		expand("output/{sample}/figures/chromPlot.pdf",sample=sample_ids),
 		expand("output/{sample}/summaryTable.tsv", sample=sample_ids)
 
 
@@ -42,8 +41,114 @@ rule all:
 ### Alignment and expression matrix
 ### -------------------------------------------------------------------
 
+if phased:
+	rule starAlignment:
+		input:
+			vcf = lambda w: config["samples"][w.sample]["phase"],
+			r1 = lambda w: config["samples"][w.sample]["R1"],
+			r2 = lambda w: config["samples"][w.sample]["R2"]
+		output: 
+			"output/{sample}/0_alignment/starAligned.sortedByCoord.out.bam",
+			"output/{sample}/0_alignment/starAligned.toTranscriptome.out.bam"
+		singularity: "docker://quay.io/biocontainers/star:2.7.10a--h9ee0642_0"
+		threads: config["threads"]
+		params: 
+			ref = config["starReferencePath"]
+		log: "output/{sample}/log/starAlignment.log"
+		shell:
+			"""
+			mkdir -p output/{wildcards.sample}/0_alignment
+			STAR \
+				--genomeDir {params.ref} \
+				--runThreadN {threads} \
+				--readFilesIn  {input.r1} {input.r2} \
+				--outFileNamePrefix output/{wildcards.sample}/0_alignment/star \
+				--outSAMtype BAM SortedByCoordinate \
+				--outSAMunmapped Within \
+				--outSAMattributes Standard \
+				--waspOutputMode SAMtag \
+				--varVCFfile {input.vcf} \
+				--quantMode TranscriptomeSAM \
+				--twopassMode Basic \
+				--twopass1readsN -1 &> {log}
+			"""
+	
+	rule waspFilter:
+		input: "output/{sample}/0_alignment/starAligned.sortedByCoord.out.bam"
+		output: "output/{sample}/0_alignment/starAligned.waspFilter.bam"
+		singularity: "docker://quay.io/biocontainers/samtools:1.16.1--h6899075_1"
+		log: "output/{sample}/log/waspFilter.log"
+		shell:
+			"""
+			samtools view -h {input} | grep -e '^@' -e 'vW:i:1' | samtools view -b -S > {output} 2> {log}
+			samtools index {output} &> {log}
+			"""
+	alignmentFile = "output/{sample}/0_alignment/starAligned.waspFilter.bam"
 
+else:
+	rule starAlignment:
+		input:
+			r1 = lambda w: config["samples"][w.sample]["R1"],
+			r2 = lambda w: config["samples"][w.sample]["R2"]
+		output: 
+			"output/{sample}/0_alignment/starAligned.sortedByCoord.out.bam",
+			"output/{sample}/0_alignment/starAligned.toTranscriptome.out.bam"
+		singularity: "docker://quay.io/biocontainers/star:2.7.10a--h9ee0642_0"
+		threads: config["threads"]
+		params: 
+			ref = config["starReferencePath"]
+		log: "output/{sample}/log/starAlignment.log"
+		shell:
+			"""
+			mkdir -p output/{wildcards.sample}/0_alignment
+			STAR \
+				--genomeDir {params.ref} \
+				--runThreadN {threads} \
+				--readFilesIn  {input.r1} {input.r2} \
+				--outFileNamePrefix output/{wildcards.sample}/0_alignment/star \
+				--outSAMtype BAM SortedByCoordinate \
+				--outSAMunmapped Within \
+				--outSAMattributes Standard \
+				--quantMode TranscriptomeSAM \
+				--twopassMode Basic \
+				--twopass1readsN -1 &> {log}
+			"""
+	alignmentFile = "output/{sample}/0_alignment/star/starAligned.sortedByCoord.out.bam"
 
+rule rsem:
+	input: "output/{sample}/0_alignment/starAligned.toTranscriptome.out.bam"
+	output: "output/{sample}/0_alignment/star.genes.results"
+	params:
+			ref=config["rsemReferencePath"]
+	singularity: "docker://quay.io/biocontainers/rsem:1.3.3--pl5321hecb563c_4"
+	threads: config["threads"]
+	log: "output/{sample}/log/rsem.log"
+	shell:
+			"""
+			rsem-calculate-expression \
+					--alignments \
+					-p {threads} \
+					--paired-end \
+					{input} \
+					{params.ref} \
+					output/{wildcards.sample}/0_alignment/star &> {log}
+			"""
+			
+rule rsemExpressionMatrix:
+	input: "output/{sample}/0_alignment/star.genes.results"
+	output: "output/{sample}/0_alignment/expression_matrix.tsv"
+	params:
+		annotation = "annotation/biomart_ensembl100_GRCh38.sorted.bed"
+	singularity: "docker://glenn032787/ase_rcontainer:1.0"
+	log: "output/{sample}/log/rsemExpressionMatrix.log"
+	shell:
+		"""
+		Rscript scripts/generateExpressionMatrix.R \
+			-i {input} \
+			-o output/{wildcards.sample}/0_alignment \
+			-a {params.annotation} \
+			-s {wildcards.sample} &> {log}
+		"""
 ### -------------------------------------------------------------------
 ### Call and filter the phase vcf
 ### -------------------------------------------------------------------
@@ -58,7 +163,7 @@ rule phase_vcf_filter:
     shell:
         """
 		mkdir -p output/{wildcards.sample}/1_variant
-		zcat -f {input.phase} | grep -E '(PASS|#)' | grep -E '(0/1|\||#)' | awk '/^#/||length($4)==1 && length($5)==1' | bgzip > {output} 2> {log}
+		cat {input.phase} | grep -E '(PASS|#)' | grep -E '(0/1|\||#)' | awk '/^#/||length($4)==1 && length($5)==1' | bgzip > {output} 2> {log}
 		"""
 
 
@@ -76,29 +181,37 @@ rule phase_vcf_index:
 ### Call and filter the RNA SNVs
 ### -------------------------------------------------------------------
 
+def getAlignment(wildcards):
+	if config["samples"][wildcards.sample]["rna"] == None:
+		print(alignmentFile)
+		return alignmentFile
+	return config["samples"][wildcards.sample]["rna"]
+
+
 if phased:
 	rule rna_snv_calling:
-	    input:
-        	bam = lambda w: config["samples"][w.sample]["rna"],
+		input:
+			#bam = lambda w: config["samples"][w.sample]["rna"],
+			bam = getAlignment,
         	vcf = "output/{sample}/1_variant/phase.het.pass.snps.vcf.gz",
         	ref = genome_path,
-        	index = "output/{sample}/1_variant/phase.het.pass.snps.vcf.gz.tbi"
-    	output:
-        	temp("output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz")
-    	conda: "config/conda/strelka.yaml"
-    	singularity: "docker://quay.io/biocontainers/strelka:2.9.10--h9ee0642_1"
-    	log: "output/{sample}/log/rna_snv_calling.log"
-    	threads: config["threads"]
-    	shell:
-        	"""
-        	configureStrelkaGermlineWorkflow.py \
+			index = "output/{sample}/1_variant/phase.het.pass.snps.vcf.gz.tbi"
+		output:
+			temp("output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz")
+		conda: "config/conda/strelka.yaml"
+		singularity: "docker://quay.io/biocontainers/strelka:2.9.10--h9ee0642_1"
+		log: "output/{sample}/log/rna_snv_calling.log"
+		threads: config["threads"]
+		shell:
+			"""
+			configureStrelkaGermlineWorkflow.py \
 			--bam={input.bam} \
 			--referenceFasta={input.ref} \
 			--forcedGT={input.vcf} \
 			--rna \
 			--runDir=output/{wildcards.sample}/StrelkaRNA &> {log}
 
-        	output/{wildcards.sample}/StrelkaRNA/runWorkflow.py -m local -j {threads} &> {log} 
+			output/{wildcards.sample}/StrelkaRNA/runWorkflow.py -m local -j {threads} &> {log} 
         	"""
 else:
 	rule rna_snv_calling:
@@ -161,7 +274,7 @@ if phased:
         		"""
         		bcftools isec {input.vcf2} {input.vcf1} -p output/{wildcards.sample}/isec -n =2 -w 1 &> {log} 
         		mv output/{wildcards.sample}/isec/0000.vcf {output} 
-			rm -rf output/{wildcards.sample}/isec
+				rm -rf output/{wildcards.sample}/isec
         		"""
 
 	rule intersect_gz:
@@ -253,12 +366,16 @@ else:
 						--rna={input.tsv} \
 						--outdir=output/{wildcards.sample}/2_mBASED &> {log}
 				"""
-	
+
+def getExpressionMatrix(wildcards):
+	if config["samples"][wildcards.sample]["rna"] == None:
+		return "output/{sample}/0_alignment/expression_matrix.tsv"
+	return rpkm_path
 
 rule addExpression:
 	input:
 		rds = "output/{sample}/2_mBASED/MBASEDresults.rds",
-		rpkm = rpkm_path
+		rpkm = getExpressionMatrix
 	output: "output/{sample}/2_mBASED/MBASED_expr_gene_results.txt"
 	singularity: "docker://glenn032787/ase_rcontainer:1.0"
 	params:
@@ -279,22 +396,24 @@ rule figures:
 	input:
 		txt = "output/{sample}/2_mBASED/MBASED_expr_gene_results.txt",
 		bed = gene_anno,
-		rpkm = rpkm_path
+		rpkm = getExpressionMatrix
 	output:
-		"output/{sample}/2_mBASED/chromPlot.pdf"
+		"output/{sample}/figures/chromPlot.pdf"
 	singularity: "docker://glenn032787/ase_rcontainer:1.0"
 	params:
 		maf = config["maf_threshold"]
 	log: "output/{sample}/log/figures.log"
 	shell:
 		"""
+		mkdir -p output/{wildcards.sample}/figures
+
 		Rscript scripts/figures.R \
 			--mbased={input.txt} \
 			--rpkm={input.rpkm} \
 			--gene={input.bed} \
 			--sample={wildcards.sample} \
 			--maf_threshold={params.maf} \
-			--outdir=output/{wildcards.sample}/2_mBASED &> {log}
+			--outdir=output/{wildcards.sample}/figures &> {log}
 		"""
 
 rule summaryTable:

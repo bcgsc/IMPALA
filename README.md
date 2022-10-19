@@ -64,6 +64,7 @@ All output and intermediary files is found in `output/{sample}` directory. The w
 | expectedMAF**        | Expect Major Allele Frequency based on CNV                                             |
 | cnv_state**          | Allelic CNV state (Loss of Heterozygosity, Allelic balance/imbalabnce)                 |
 | methyl_state**       | Methylation difference in promter region (Allele 1 methylation - Allele 2 methylation) |
+| cancer_gene**        | T/F if gene is a known cancer gene (based on `annotation/cancer_gene.txt`)               |
 | sample               | Sample Name                                                                            |
 
 ** Only included if cancer_analysis is True and CNV and allelic methylation data is provided  

@@ -10,6 +10,8 @@ option_list = list(
               help="allelic methylation bed file", metavar="character"),
   make_option(c("-a", "--ase"), type="character", default=NULL,
               help="mbased ASE result", metavar="character"),
+  make_option(c("-g", "--cancer"), type="character", default=NULL,
+              help="cancer gene", metavar="character"),
   make_option(c("-s", "--sample"), type="character", default=NULL,
               help="Sample name", metavar="character"),
   make_option(c("-o", "--outdir"), type="character", default = NULL,
@@ -21,6 +23,8 @@ opt_parser <- OptionParser(option_list=option_list)
 opt <- parse_args(opt_parser)
 out <- opt$outdir
 sample <- opt$sample
+cancer <- read.delim(opt$cancer, sep = "\t", header = F, comment.char = "#") %>%
+  pull()
 
 cnv <- read.delim(opt$cnv, header = F, comment.char = "#") %>%
   dplyr::select(V4, V12, V13, V15) %>%
@@ -47,13 +51,14 @@ dmr <- read.delim(opt$methyl, header = F, comment.char = "#", stringsAsFactors =
 
 
 
-ase <- read.delim(opt$ase, 
-                  header = T, comment.char = "#", stringsAsFactors = F)
+ase <- read.delim(opt$ase, header = T, comment.char = "#", stringsAsFactors = F)
 
 summary_table <- ase %>%
   dplyr::select(gene, RPKM, allele1IsMajor, majorAlleleFrequency, padj, aseResults) %>%
   left_join(cnv, by = "gene") %>%
   left_join(dmr, by = "gene") %>%
   dplyr::mutate(sample = sample) %>%
+  dplyr::mutate(cancer_gene = gene %in% cancer) %>%
   write.table(paste0(out, "/summaryTable.tsv"), 
               sep = "\t", quote = F, row.names = F, col.names = T)
+

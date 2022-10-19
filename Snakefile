@@ -522,6 +522,8 @@ rule summaryTableCancer:
 		ase = "output/{sample}/2_mBASED/MBASED_expr_gene_results.txt" 
 	output: "output/{sample}/summaryTable.tsv"
 	singularity: "docker://glenn032787/ase_rcontainer:1.0"
+	params:
+		cancer="annotation/cancer_gene.txt"
 	log: "output/{sample}/log/summaryTable.log"
 	shell:
 		"""
@@ -530,6 +532,7 @@ rule summaryTableCancer:
 			--methyl={input.methyl} \
 			--ase={input.ase} \
 			--sample={wildcards.sample} \
+			--cancer={params.cancer} \
 			--outdir=output/{wildcards.sample} 2> {log}
 		"""
 

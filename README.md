@@ -1,6 +1,6 @@
 
 # Allele specific expression
-This workflow outputs the allele-specific expression using short-read RNA-seq and DNA-seq bams. The phasing information of the variants from tools such as WhatsApp can be provided to increase the performance of the tool (to-be an optional input but I don't know how to write that in snakemake - it is optional in the R script though)
+This workflow outputs the allele-specific expression using short-read RNA-seq. The phasing information of the variants from tools such as WhatsApp can be provided to increase the performance of the tool. Copy number variant data and allelic methylation data can also be provided to analyze genes with allele specific expression.
 
 # Install
 Clone the repository:
@@ -9,63 +9,99 @@ Clone the repository:
 git clone https://svn.bcgsc.ca/bitbucket/scm/marra/vporter-allelespecificexpression.git
 ```
 
+Must have snakemake and singularity installed. Remaining software used in this workflow is containerized. 
+
+# Input
+
+### **Method one**: RNA reads: <br />
+- RNA paired end reads (R1 & R2 fastq file)
+
+### **Method two**: RNA alignment: <br />
+- RNA alignment alignment (bam file)
+- Expression Matrix 
+    - Expression in RPKM/TPM
+    - Gene name must be in HGNC format
+    - Column name is "Gene" and sample names
+
+### **Optional Input for both methods:**
+- Phase VCF
+    - Only needed if **phased option** in parameter.yaml is True   
+    - Can be obtained using [WhatsHap](https://github.com/whatshap/whatshap/) with DNA long reads
+    - Significantly improves precision of ASE calling
+ - Copy Number Variant Data
+    - Only needed if **cancer_analysis option** in parameter.yaml is True 
+    - Can be optained using [ploidetect](https://github.com/lculibrk/Ploidetect)
+    - Intersect ASE gene with allelic copy number imbalance regions
+- Allelic Methylation
+    - Only needed if **cancer_analysis option** in parameter.yaml is True 
+    - Can be optained using [NanoMethPhase](https://github.com/vahidAK/NanoMethPhase)
+    - Use to intersect ASE gene with allelic methylation in promoter region
+
+# **Output**
+All output and intermediary files is found in `output/{sample}` directory. The workflow has four main section, alignment, variant calling, mbased and cancer analysis. Files from each steps are found in the corrospinding folder within `output/{sample}`. The key outputs from the workflow is located below
+
+1. MBASED related outputs (found in `output/{sample}/mbased`)
+    - The tabular results of the output `MBASED_expr_gene_results.txt`
+    - The rds object of the MBASED raw output `MBASEDresults.rds`
+2. Summary table of all outputs
+    - Found in `output/{sample}/summaryTable.tsv`
+    - Data of all phased genes with ASE information along with copy number variant and allelic methylation information if avalble
+3. Figures 
+    - Found in `output/{sample}/figures`
+    - Example figure shown below
+
+## **Summary Table Description**
+| Column               | Description                                                                            | 
+| :---                 |    :----:                                                                              |  
+| gene                 | HGNC gene symbol                                                                       | 
+| RPKM                 | Expression level                                                                       | 
+| allele1IsMajor       | T/F if allele 1 is the major allele (allele 1 = HP1)                                   | 
+| majorAlleleFrequency | Major allele frequency                                                                 | 
+| padj                 | Benjamini-Hochberg adjusted pvalue                                                     | 
+| aseResults           | ASE result based on MAF threshold (and pval)                                           | 
+| cnv.A**              | Copy Number for allele 1                                                               |
+| cnv.B**              | Copy Number for allele 2                                                               |
+| expectedMAF**        | Expect Major Allele Frequency based on CNV                                             |
+| cnv_state**          | Allelic CNV state (Loss of Heterozygosity, Allelic balance/imbalabnce)                 |
+| methyl_state**       | Methylation difference in promter region (Allele 1 methylation - Allele 2 methylation) |
+| sample               | Sample Name                                                                            |
+
+** Only included if cancer_analysis is True and CNV and allelic methylation data is provided  
+
 # Running samples
+
 ## **Edit the config files**
 
 parameters.yaml: <br />
-- Choose a genome to use (hg38/hg19/hg38_no_alt_TCGA_HTMCP_HPVs)
-- Specify the path to the RPKM matrix that contains the sample (can include multiple samples but sample id must be in the column names)
-- Choose to include phased genome 
+- Choose a **genome** to use (hg38/hg19/hg38_no_alt_TCGA_HTMCP_HPVs)
+- Specify the path to the **RPKM matrix** that contains the sample (can include multiple samples but sample id must be in the column names)
+- Specify **MAF threshold** and **threads**
+- Choose to include **phasing** data (need to provide phased VCF) 
+- Choose to do **cancer_analysis** (need to provide CNV and methylation data)
+- Add paths to SNPeff **annotation file**
+- Add paths to STAR and RSEM **reference files** (only needed if cancer_analysis is True)
 
 samples.yaml: <br />
 - Make sure to name the sample(s) the same identifier as the matching RPKM matrix column name
-- Add the paths to the DNA-seq and RNA-seq Illumina bam files and the phased VCF file 
-- Do not need to add phased VCF file is phased is false
+- Add the paths to the **RNA-seq Illumina bam files** or **RNA R1 and R2 illumina reads**
+- Add paths to **phase VCF** (needed if phase = True)
+- Add paths to **CNV and allelic methylation data** (needed if cancer_analysis = True)
 
-annotationPaths.yaml: <br />
-- Use to specify paths to snpEff databases and config file
-- Does not need to be changed if running on GSC servers
-
-## **Input**
-
-1. RNA-seq Illumina Bam File
-2. Phased VCF (from whatshap)
-3. Expression Matrix (RPKM units, Column name "Gene" and Sample names)
 
 ## **Run snakemake**
-You can choose the number of max threads to use with `-c`. This is the command to run:
+You can choose the number of max threads to use with `-c`. This is the command to run it with singularity:
 
 ```
 snakemake -c 30 --use-singularity --singularity-args "-B /projects,/home,/gsc"
 ```
 
-# Outputs
-## MBASED-related output files
-All of the outputs will be found in the `output/{sample}` directory, but the main outputs of interest will be in `output/{sample}/mbased`. The outputs include:
-1. The tabular results of the output `MBASED_expr_gene_results.txt`
-2. The rds object of the MBASED raw output `MBASEDresults.rds`
-3. The rds object of the MBASED gene output simplified dataframe `MBASED_expr_gene_results.rds`
-4. Four descriptive figures of the results: `aseGenesBar.pdf`, `aseGenesDot.pdf`, `chromPlot.pdf`, `sankeyPlot.html` 
+The following command is for running the workflow with conda:
 
-## Output dataframe description file 
-The `MBASED_expr_gene_results.txt` output will have the main results included. Here is a description of the columns:
- <br />
+```
+snakemake -c 30 --use-conda 
+```
 
-| Column               | Description                                                           | 
-| :---                 |    :----:                                                             |  
-| gene                 | HGNC gene symbol                                                      | 
-| gene_biotype         | The type of gene (protein_coding currently selected)                  | 
-| gene_band            | chromosome band                                                       | 
-| RPKM                 | Expression level                                                      | 
-| allele1IsMajor       | T/F if allele 1 is the major allele (allele 1 = HP1)                  | 
-| majorAlleleFrequency | Major allele frequency                                                | 
-| pValueASE            | p-value output by mBASED                                              | 
-| pValueHeterogeneity  | The heterogeneity of the pvalue between the multiple SNVs in the gene | 
-| padj                 | Benjamini-Hochberg adjusted pvalue                                    | 
-| significance         | Factorize p-value cut off of 0.05                                     | 
-| MAF                  | Factorize MAF cut off of 0.75                                         | 
-
-## Figure Outputs 
+# Figure Outputs 
 
 ### aseGenesDot
 The `aseGenesDot.pdf` figure shows the MAF and padj for each phased gene. The red dots (MAF > 0.75 & padj < 0.05) are the ASE genes. 

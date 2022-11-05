@@ -25,8 +25,10 @@ cancer_analysis = config["cancer_analysis"]
 
 if cancer_analysis:
 	ruleorder: summaryTableCancer > summaryTable
+	figure = expand("output/{sample}/figures/aseCause.pdf", sample=sample_ids)
 else:
 	ruleorder: summaryTable > summaryTableCancer
+	figure = []
 
 ### -------------------------------------------------------------------
 ### Target rule
@@ -34,8 +36,8 @@ else:
 rule all:
 	input:
 		expand("output/{sample}/figures/chromPlot.pdf",sample=sample_ids),
-		expand("output/{sample}/summaryTable.tsv", sample=sample_ids)
-
+		expand("output/{sample}/summaryTable.tsv", sample=sample_ids),
+		figure
 
 ### -------------------------------------------------------------------
 ### Alignment and expression matrix
@@ -163,7 +165,7 @@ rule phase_vcf_filter:
     shell:
         """
 		mkdir -p output/{wildcards.sample}/1_variant
-		cat {input.phase} | grep -E '(PASS|#)' | grep -E '(0/1|\||#)' | awk '/^#/||length($4)==1 && length($5)==1' | bgzip > {output} 2> {log}
+		zcat {input.phase} | grep -E '(PASS|#)' | grep -E '(0/1|\||#)' | awk '/^#/||length($4)==1 && length($5)==1' | bgzip > {output} 2> {log}
 		"""
 
 
@@ -182,8 +184,7 @@ rule phase_vcf_index:
 ### -------------------------------------------------------------------
 
 def getAlignment(wildcards):
-	if config["samples"][wildcards.sample]["rna"] == None:
-		print(alignmentFile)
+	if "rna" not in config["samples"][wildcards.sample] or config["samples"][wildcards.sample]["rna"] == None:
 		return alignmentFile
 	return config["samples"][wildcards.sample]["rna"]
 
@@ -368,7 +369,7 @@ else:
 				"""
 
 def getExpressionMatrix(wildcards):
-	if config["samples"][wildcards.sample]["rna"] == None:
+	if "rna" not in config["samples"][wildcards.sample] or  config["samples"][wildcards.sample]["rna"] == None:
 		return "output/{sample}/0_alignment/expression_matrix.tsv"
 	return rpkm_path
 
@@ -426,7 +427,7 @@ rule summaryTable:
 
 
 ### -------------------------------------------------------------------
-### Cancer analysis
+### Cancer analysis - Copy Number Variant
 ### -------------------------------------------------------------------
 
 rule annotateGenes:
@@ -457,36 +458,29 @@ rule genomeLength:
 	
 
 
-rule promoterSlop:
+rule promoterFlank:
 	input: 
 		gene = "output/{sample}/3_cancer/raw/gene_annotation.bed",
 		length = "output/{sample}/3_cancer/raw/genome.length"
 	output: "output/{sample}/3_cancer/raw/promoter_annotation.bed"
 	singularity: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
-	log: "output/{sample}/log/promoterSlop.log"
+	log: "output/{sample}/log/promoterFlank.log"
 	shell:
 		"""
-		bedtools slop -l 2000 -r 500 -i {input.gene} -g {input.length} > {output} 2> {log}
+		bedtools flank -l 2000 -r 500 -i {input.gene} -g {input.length} > {output} 2> {log}
 		"""
 
-rule cnv_dmr:
-	input:
-		cnv = lambda w: config["samples"][w.sample]["cnv"],
-		methyl = lambda w: config["samples"][w.sample]["methyl"] 
-	output: 
-		cnv = "output/{sample}/3_cancer/raw/cnv.bed",
-		methyl = "output/{sample}/3_cancer/raw/methyl.bed"
+rule cnv_preprocess:
+	input:  lambda w: config["samples"][w.sample]["cnv"]
+	output: "output/{sample}/3_cancer/raw/cnv.bed"
 	singularity: "docker://glenn032787/ase_rcontainer:1.0"
-	log: "output/{sample}/log/cnv_dmr.log"
+	log: "output/{sample}/log/cnv_preprocess.log"
 	shell:
 		"""
-		mkdir -p output/{wildcards.sample}/3_cancer/raw 
-
-		Rscript scripts/cnv_dmr_process.R \
-			--methyl={input.methyl} \
-			--cnv={input.cnv} \
+		Rscript scripts/cnv_preprocess.R \
+			--cnv={input} \
 			--outdir=output/{wildcards.sample}/3_cancer/raw &> {log}
-		"""	
+		"""
 
 rule cnvIntersect:
 	input: 
@@ -502,6 +496,23 @@ rule cnvIntersect:
 		"""
 
 
+### -------------------------------------------------------------------
+### Cancer analysis - Methylation
+### -------------------------------------------------------------------
+
+rule dmr_preprocess:
+        input: lambda w: config["samples"][w.sample]["methyl"]
+        output: "output/{sample}/3_cancer/raw/methyl.bed"
+        singularity: "docker://glenn032787/ase_rcontainer:1.0"
+        log: "output/{sample}/log/dmr_preprocess.log"
+        shell:
+                """
+                Rscript scripts/methyl_preprocess.R \
+                        --methyl={input} \
+                        --outdir=output/{wildcards.sample}/3_cancer/raw &> {log}
+                """
+
+
 rule methylIntersect:
 	input: 
 		methyl = "output/{sample}/3_cancer/raw/methyl.bed",
@@ -515,10 +526,225 @@ rule methylIntersect:
 		bedtools intersect -loj -a {input.gene} -b {input.methyl} | awk '$9 != "." {{print $0}}' > {output} 2> {log}
 		"""
 
+
+
+### -------------------------------------------------------------------
+### Cancer analysis - Transciption Factor Binding Site
+### -------------------------------------------------------------------
+
+rule promoterID:
+	input: "output/{sample}/3_cancer/raw/promoter_annotation.bed"
+	output:
+		id2gene = temp("output/{sample}/3_cancer/tfbs/id2gene.txt"),
+		id = temp("output/{sample}/3_cancer/tfbs/id.txt")
+	log: "output/{sample}/log/promoterID.log"
+	shell:
+		"""
+		mkdir -p output/{wildcards.sample}/3_cancer/tfbs
+		awk 'BEGIN {{print "sequence_id\tgene"}}; {{print $1 ":" $2 "-" $3 "\t" $4}}' {input} > {output.id2gene} 2> {log}
+		cut -f1 {output.id2gene} | tail -n +2 > {output.id}
+		"""
+
+rule createNormalPromoter:
+	input: "output/{sample}/3_cancer/tfbs/id.txt"
+	output: 
+		temp("output/{sample}/3_cancer/tfbs/ref.promoter.fa")
+	params:
+		ref = genome_path
+	singularity: "docker://quay.io/biocontainers/samtools:1.16.1--h6899075_1"
+	log: "output/{sample}/log/createNormalPromoter.log"
+	shell:
+		"samtools faidx -r {input} {params.ref} > {output} 2> {log}"
+
+rule mutatePromoter:
+	input: 
+		ref_promoter = "output/{sample}/3_cancer/tfbs/ref.promoter.fa",
+		id = "output/{sample}/3_cancer/tfbs/id.txt",
+		phase_vcf = lambda w: config["samples"][w.sample]["phase"]
+	output: temp("output/{sample}/3_cancer/tfbs/allele{num}_promoter.fa")
+	singularity: "docker://quay.io/biocontainers/bcftools:1.15--h0ea216a_2"
+	log: "output/{sample}/log/mutatePromoter_{num}.log"
+	shell:
+		"""
+		cat {input.ref_promoter} | bcftools consensus {input.phase_vcf} -H {wildcards.num}pIu > {output} 2> {log}
+		"""
+
+rule scanMotif:
+	input: "output/{sample}/3_cancer/tfbs/allele{num}_promoter.fa"
+	output: "output/{sample}/3_cancer/tfbs/allele{num}_motif.txt"
+	params:
+		motifFile="annotation/HOCOMOCOv11_core_HUMAN_mono_meme_format.meme"
+	singularity: "docker://quay.io/biocontainers/meme:5.4.1--py310pl5321hb021246_2"
+	log: "output/{sample}/log/scanMotif_{num}.log"
+	shell:
+		"""
+		fimo --text {params.motifFile} {input} > {output} 2> {log}
+		"""
+rule compareTFBS:
+	input: 
+		a1 = "output/{sample}/3_cancer/tfbs/allele1_motif.txt",
+		a2 = "output/{sample}/3_cancer/tfbs/allele2_motif.txt",
+		expression_matrix = getExpressionMatrix,
+		id2gene = "output/{sample}/3_cancer/tfbs/id2gene.txt"
+	output: "output/{sample}/3_cancer/tfbs/motifDiff.tsv"
+	singularity: "docker://glenn032787/ase_rcontainer:1.0"
+	params: 
+		tf_list = "annotation/human_mono_motifs.tsv"
+	log: "output/{sample}/log/compareTFBS.log"
+	shell:
+		"""
+		Rscript scripts/compareTFBS.R \
+			--allele1={input.a1} \
+			--allele2={input.a2} \
+			--expression_matrix={input.expression_matrix} \
+			--id2gene={input.id2gene} \
+			--tf={params.tf_list} \
+			--min=10 \
+			--outdir=output/{wildcards.sample}/3_cancer/tfbs \
+			--sample={wildcards.sample} 2> {log}
+		"""
+
+### -------------------------------------------------------------------
+### Cancer analysis - Stop gain/loss mutation
+### -------------------------------------------------------------------
+
+rule annotatePhase:
+	input: lambda w: config["samples"][w.sample]["phase"]
+	output: temp("output/{sample}/3_cancer/stopVar/phase.annotate.vcf")
+	singularity: "docker://quay.io/biocontainers/snpeff:5.0--hdfd78af_1"
+	params:
+		genome = genome_name,
+		snpEff_config = config["annotationPath"]["snpEff_config"],
+		snpEff_datadir = config["annotationPath"]["snpEff_datadir"]
+	log: "output/{sample}/log/annotatePhase.log"
+	shell:
+		"""
+		mkdir -p output/{wildcards.sample}/3_cancer/stopVar
+
+		snpEff -Xmx64g \
+			-v {params.genome} \
+			-c {params.snpEff_config} \
+			-dataDir {params.snpEff_datadir} \
+			-noStats \
+			{input} > {output} 2> {log}
+
+		"""	
+
+rule oneLine:
+	input: "output/{sample}/3_cancer/stopVar/phase.annotate.vcf"
+	output: temp("output/{sample}/3_cancer/stopVar/phase.oneline.annotate.vcf")
+	log: "output/{sample}/log/oneLine.log"
+	shell:
+		"""
+		cat {input} | scripts/vcfEffOnePerLine.pl > {output} 2> {log}
+		"""
+
+rule snpSiftPhase:
+	input: "output/{sample}/3_cancer/stopVar/phase.oneline.annotate.vcf"
+	output: "output/{sample}/3_cancer/stopVar/phase.annotate.tsv"
+	singularity: "docker://quay.io/biocontainers/snpsift:5.1d--hdfd78af_0"
+	log: "output/{sample}/log/snpSiftPhase.log"
+	shell:
+		"""
+		SnpSift -Xmx64g \
+			extractFields {input} \
+			ANN[0].GENE ANN[0].EFFECT GEN[0].GT FILTER > {output} 2> {log}
+		"""
+
+rule getStopMutation:
+	input: "output/{sample}/3_cancer/stopVar/phase.annotate.tsv"
+	output: "output/{sample}/3_cancer/stopVar/stop_variant.tsv"
+	singularity: "docker://glenn032787/ase_rcontainer:1.0"
+	log: "output/{sample}/log/getStopMutation.log"
+	shell:
+		"""
+		Rscript scripts/stopVariant.R \
+			--annotation={input} \
+			--outdir=output/{wildcards.sample}/3_cancer/stopVar &> {log}
+		"""	
+
+
+### -------------------------------------------------------------------
+### Cancer analysis - Somatic Mutation
+### -------------------------------------------------------------------
+
+rule getGeneSlop:
+	input: 
+		gene = "output/{sample}/3_cancer/raw/gene_annotation.bed",
+		length = "output/{sample}/3_cancer/raw/genome.length"
+	output: "output/{sample}/3_cancer/somatic/geneSlop.bed"
+	singularity: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
+	log: "output/{sample}/log/getGeneSlop.log"
+	shell:
+		"""
+		mkdir -p output/{wildcards.sample}/3_cancer/somatic
+		bedtools slop -l 5000 -r 1000 -i {input.gene} -g {input.length} > {output} 2> {log}
+		"""
+
+
+rule somaticIntersect:
+	input:
+		genes = "output/{sample}/3_cancer/somatic/geneSlop.bed",
+		variants = lambda w: config["samples"][w.sample][w.variant]
+	output: "output/{sample}/3_cancer/somatic/{variant}.vcf"
+	singularity: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
+	log: "output/{sample}/log/somatic_{variant}_intersect.log"
+	shell:
+		"""
+		bedtools intersect -a {input.genes} -b {input.variants} > {output} 2> {log}
+		"""
+
+
+### -------------------------------------------------------------------
+### Cancer analysis - Summary Table
+### -------------------------------------------------------------------
+
+# Functions to check input
+
+def checkCNV(wildcards):
+	if config['cancer_analysis'] and "cnv" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["cnv"] != None:
+		return "output/{sample}/3_cancer/intersect/cnv_intersect.bed"
+	else:
+		return []
+
+def checkMethyl(wildcards):
+	if config['cancer_analysis'] and "methyl" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["methyl"] != None:
+		return "output/{sample}/3_cancer/intersect/methyl_intersect.bed"
+	else:
+		return []
+
+def checkTFBS(wildcards):
+	if config['cancer_analysis'] and "phase" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["phase"] != None:
+		return "output/{sample}/3_cancer/tfbs/motifDiff.tsv"
+	else:
+		return []
+
+def checkStopVar(wildcards): 
+	if config['cancer_analysis'] and "phase" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["phase"] != None:
+		return "output/{sample}/3_cancer/stopVar/stop_variant.tsv"
+	else:
+		return []
+
+def checkSomaticSnv(wildcards):
+	if config['cancer_analysis'] and "somatic_snv" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["somatic_snv"] != None:
+		return "output/{sample}/3_cancer/somatic/somatic_snv.bed"
+	else:
+		return []	
+
+def checkSomaticIndel(wildcards):
+	if config['cancer_analysis'] and "somatic_indel" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["somatic_indel"] != None:
+		return "output/{sample}/3_cancer/somatic/somatic_indel.bed"
+	else:
+		return []
+
 rule summaryTableCancer:
 	input:
-		cnv = "output/{sample}/3_cancer/intersect/cnv_intersect.bed",
-		methyl = "output/{sample}/3_cancer/intersect/methyl_intersect.bed", 
+		cnv = checkCNV,
+		methyl = checkMethyl, 
+		tfbs = checkTFBS,
+		stopVar = checkStopVar,
+		snv = checkSomaticSnv,
+		indel = checkSomaticIndel,
 		ase = "output/{sample}/2_mBASED/MBASED_expr_gene_results.txt" 
 	output: "output/{sample}/summaryTable.tsv"
 	singularity: "docker://glenn032787/ase_rcontainer:1.0"
@@ -530,6 +756,10 @@ rule summaryTableCancer:
 		Rscript scripts/summaryTable.R \
 			--cnv={input.cnv} \
 			--methyl={input.methyl} \
+			--tfbs={input.tfbs} \
+			--stop={input.stopVar} \
+			--snv={input.snv} \
+			--indel={input.indel} \
 			--ase={input.ase} \
 			--sample={wildcards.sample} \
 			--cancer={params.cancer} \
@@ -537,3 +767,21 @@ rule summaryTableCancer:
 		"""
 
 
+### -------------------------------------------------------------------
+### Cancer analysis - Figures
+### -------------------------------------------------------------------
+
+rule cancerFigures:
+	input: "output/{sample}/summaryTable.tsv"
+	output: "output/{sample}/figures/aseCause.pdf"
+	singularity: "docker://glenn032787/ase_rcontainer:1.0"
+	log: "output/{sample}/log/cancerFigures.log" 
+	shell:
+		"""
+		mkdir -p output/{wildcards.sample}/figures/tables
+	
+		Rscript scripts/cancerFigures.R \
+			--summary={input} \
+			--outdir=output/{wildcards.sample}/figures \
+			--sample={wildcards.sample} 2> {log}
+		"""

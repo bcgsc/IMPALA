@@ -59,15 +59,26 @@ All output and intermediary files is found in `output/{sample}` directory. The w
 | majorAlleleFrequency | Major allele frequency                                                                 | 
 | padj                 | Benjamini-Hochberg adjusted pvalue                                                     | 
 | aseResults           | ASE result based on MAF threshold (and pval)                                           | 
-| cnv.A**              | Copy Number for allele 1                                                               |
-| cnv.B**              | Copy Number for allele 2                                                               |
-| expectedMAF**        | Expect Major Allele Frequency based on CNV                                             |
-| cnv_state**          | Allelic CNV state (Loss of Heterozygosity, Allelic balance/imbalabnce)                 |
-| methyl_state**       | Methylation difference in promter region (Allele 1 methylation - Allele 2 methylation) |
-| cancer_gene**        | T/F if gene is a known cancer gene (based on `annotation/cancer_gene.txt`)               |
+| cnv.A*               | Copy Number for allele 1                                                               |
+| cnv.B*               | Copy Number for allele 2                                                               |
+| expectedMAF*         | Expect Major Allele Frequency based on CNV                                             |
+| cnv_state*           | Allelic CNV state (Loss of Heterozygosity, Allelic balance/imbalabnce)                 |
+| methyl_state**       | Methylation difference in promter region (Allele 1 - Allele 2) |
+| tf_allele***         | Allele where there is gain of transcription factor binding site                        |
+| transcriptionFactor***| Transcription Factor for gain TFBS                                                     |
+| stop_variant_allele***| Allele where stop gain/stop loss variant is found                                      |
+| somaticSNV****       | Somatic SNV found in (or around) gene (T/F)                                            |
+| somaticIndel****     | Somatic Indel found in (or around) gene (T/F)                                          |
+| cancer_gene          | T/F if gene is a known cancer gene (based on `annotation/cancer_gene.txt`)             |
 | sample               | Sample Name                                                                            |
 
-** Only included if cancer_analysis is True and CNV and allelic methylation data is provided  
+\* Only included if CNV data is provided
+
+\** Only included if methylation data is provided
+
+\*** Only included if phased vcf is provided
+
+\**** Only included if somatic snv and indel is provided
 
 # Running samples
 

@@ -39,9 +39,38 @@ else:
 ### -------------------------------------------------------------------
 rule all:
 	input:
+		expand("output/{sample}/params.txt",sample=sample_ids),
 		expand("output/{sample}/figures/chromPlot.pdf",sample=sample_ids),
 		expand("output/{sample}/summaryTable.tsv", sample=sample_ids),
 		figure
+
+### -------------------------------------------------------------------
+### Params
+### -------------------------------------------------------------------
+
+rule params:
+	output: "output/{sample}/params.txt"
+	params: 
+		sample_info = lambda w: config["samples"][w.sample],
+		genome_name = config["genome_name"],
+		expressionMatrix = config["matrix"],
+		phase = config["phased"],
+		cancer = config["cancer_analysis"],
+		maf = config["maf_threshold"],
+		threads = config["threads"]
+	shell:
+		"""
+		date >> {output}
+		printf "{wildcards.sample}\n------------------------\n\n" >> {output}
+		echo {params.sample_info} | tr  , '\n'  >> {output}
+		echo expression_matrix: {params.expressionMatrix} >> {output}
+		printf "\n------------------------\n" >> {output}
+		echo Major Allele Frequency Threshold: {params.maf} >> {output}
+		echo Genome: {params.genome_name}
+		echo Phased: {params.phase}  >> {output}
+		echo Cancer analysis: {params.cancer} >> {output}	
+		echo Threads: {params.threads} >> {output}
+		"""
 
 ### -------------------------------------------------------------------
 ### Alignment and expression matrix

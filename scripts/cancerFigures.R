@@ -20,7 +20,8 @@ out <- opt$outdir
 sample <- opt$sample
 
 summary_path <- opt$summary
-summary_table <- read_delim(summary_path, delim = "\t", show_col_types = F)
+summary_table <- read.delim(summary_path, header = T, stringsAsFactors = F, sep = "\t")
+
 
 column <- colnames(summary_table)
 
@@ -88,7 +89,7 @@ if ("methyl_state" %in% column) {
   
   dmr %>%
     dplyr::mutate(sample = sample) %>%
-    write.table(file = paste0(out, "/table/dmrContingency.tsv"),
+    write.table(file = paste0(out, "/tables/dmrContingency.tsv"),
                 quote = F, sep = "\t", row.names = T, col.names = T)
 }
 
@@ -118,7 +119,7 @@ if ("stop_variant_allele" %in% column) {
   
   stop %>%
     dplyr::mutate(sample = sample) %>%
-    write.table(file = paste0(out, "/table/stopVarContingency.tsv"),
+    write.table(file = paste0(out, "/tables/stopVarContingency.tsv"),
                 quote = F, sep = "\t", row.names = T, col.names = T)
   
   stopContingency <- ggplot(data =  stop, mapping = aes(x = stop, y = expression)) +
@@ -137,7 +138,7 @@ if ("stop_variant_allele" %in% column) {
     dplyr::mutate(percent = n/sum(n)) %>%
     dplyr::mutate(sample = sample)
   
-  write.table(stopVarTable, file = paste0(out, "/table/stopVarTable.tsv"),
+  write.table(stopVarTable, file = paste0(out, "/tables/stopVarTable.tsv"),
               quote = F, sep = "\t", row.names = F, col.names = T)
   
   stopBar <-  stopVarTable %>%
@@ -167,7 +168,7 @@ if ("somaticSNV" %in% column) {
     dplyr::mutate(percent = n/sum(n)) %>%
     dplyr::mutate(sample = sample)
   
-  write.table(snvTable, file = paste0(out, "/table/snvTable.tsv"),
+  write.table(snvTable, file = paste0(out, "/tables/snvTable.tsv"),
               quote = F, sep = "\t", row.names = F, col.names = T)
   
   snv <- snvTable %>%
@@ -196,7 +197,7 @@ if ("somaticIndel" %in% column) {
     dplyr::mutate(percent = n/sum(n)) %>%
     dplyr::mutate(sample = sample)
   
-  write.table(indelTable, file = paste0(out, "/table/indelTable.tsv"),
+  write.table(indelTable, file = paste0(out, "/tables/indelTable.tsv"),
               quote = F, sep = "\t", row.names = F, col.names = T)
   
   indel <- indelTable %>%
@@ -224,7 +225,7 @@ if ("tf_allele" %in% column) {
     summarize(n=n()) %>%
     dplyr::mutate(percent = n/sum(n)) %>%
     dplyr::mutate(sample = sample)
-  write.table(tfbsTable, file = paste0(out, "/table/tfbsTable.tsv"),
+  write.table(tfbsTable, file = paste0(out, "/tables/tfbsTable.tsv"),
               quote = F, sep = "\t", row.names = F, col.names = T)
   
   tfbs <- tfbsTable %>%
@@ -294,7 +295,7 @@ summaryTableExplain$explanation[is.na(summaryTableExplain$explanation)] <- "Unkn
 summaryTableExplain %>%
   dplyr::select(gene, cancer_gene, explanation) %>%
   dplyr::mutate(sample = sample) %>%
-  write.table(file = paste0(out, "/table/aseCause.tsv"),
+  write.table(file = paste0(out, "/tables/aseCause.tsv"),
               quote = F, sep = "\t", row.names = F, col.names = T)
 
 

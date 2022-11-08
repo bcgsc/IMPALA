@@ -17,6 +17,12 @@ rpkm_path = config["matrix"]
 samples_dict = config["samples"]
 sample_ids = samples_dict.keys()
 
+# Possible tissues
+possibleTissue = ["Adipose", "Adrenal_gland", "allTissue", "Bladder", "Blood", "Brain", "Breast", 
+		  "Cervix", "Colon", "Esophagus", "Fallopian_tube", "Heart", "Kidney", "Liver",
+		  "Lung", "Muscle", "Nerve", "Ovary", "Pancreas", "Pituitary", "Prostate", "Salivary",
+		  "Skin", "Small_intestine", "Spleen", "Stomach", "Testis", "Thyroid", "Uterus","Vagina"]
+
 # Check phased
 phased = config["phased"]
 
@@ -24,10 +30,8 @@ phased = config["phased"]
 cancer_analysis = config["cancer_analysis"]
 
 if cancer_analysis:
-	ruleorder: summaryTableCancer > summaryTable
 	figure = expand("output/{sample}/figures/aseCause.pdf", sample=sample_ids)
 else:
-	ruleorder: summaryTable > summaryTableCancer
 	figure = []
 
 ### -------------------------------------------------------------------
@@ -417,13 +421,6 @@ rule figures:
 			--outdir=output/{wildcards.sample}/figures &> {log}
 		"""
 
-rule summaryTable:
-	input: "output/{sample}/2_mBASED/MBASED_expr_gene_results.txt"
-	output: "output/{sample}/summaryTable.tsv"
-	shell:
-		"""
-		cut -f 1,3,4,5,8,11 {input} > {output}
-		"""
 
 
 ### -------------------------------------------------------------------
@@ -737,6 +734,19 @@ def checkSomaticIndel(wildcards):
 	else:
 		return []
 
+def checkCancerAnalysis(wildcards):
+	if config['cancer_analysis']:
+		return "annotation/cancer_gene.txt"
+	else: 
+		return []
+
+def checkTissue(wildcards):
+	if config['cancer_analysis'] and "tissue" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["tissue"] != None and config["samples"][wildcards.sample]["tissue"] in possibleTissue:
+		return config["samples"][wildcards.sample]["tissue"]
+	else:
+		return []
+	
+
 rule summaryTableCancer:
 	input:
 		cnv = checkCNV,
@@ -749,7 +759,9 @@ rule summaryTableCancer:
 	output: "output/{sample}/summaryTable.tsv"
 	singularity: "docker://glenn032787/ase_rcontainer:1.0"
 	params:
-		cancer="annotation/cancer_gene.txt"
+		cancer=checkCancerAnalysis,
+		normal="annotation/phaserNormalASE.tsv",
+		tissue=checkTissue
 	log: "output/{sample}/log/summaryTable.log"
 	shell:
 		"""
@@ -763,6 +775,8 @@ rule summaryTableCancer:
 			--ase={input.ase} \
 			--sample={wildcards.sample} \
 			--cancer={params.cancer} \
+			--tissue={params.tissue} \
+			--normal={params.normal} \
 			--outdir=output/{wildcards.sample} 2> {log}
 		"""
 
@@ -783,5 +797,5 @@ rule cancerFigures:
 		Rscript scripts/cancerFigures.R \
 			--summary={input} \
 			--outdir=output/{wildcards.sample}/figures \
-			--sample={wildcards.sample} 2> {log}
+			--sample={wildcards.sample} &> {log}
 		"""

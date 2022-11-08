@@ -23,7 +23,11 @@ option_list = list(
   make_option(c("-n", "--snv"), type="character", default = NULL,
               help="Somatic SNV", metavar="character"),
   make_option(c("-i", "--indel"), type="character", default = NULL,
-              help="Somatic Indel", metavar="character")
+              help="Somatic Indel", metavar="character"),
+  make_option(c("r-", "--tissue"), type="character", default = NULL,
+              help="tissue name", metavar="character"),
+  make_option(c("-N", "--normal"), type="character", default = NULL,
+              help="Normal ASE", metavar="character"),
 )
 
 
@@ -39,9 +43,10 @@ tfbs_path <- opt$tfbs
 stop_path <- opt$stop
 snv_path <- opt$snv
 indel_path <- opt$indel
-  
-cancer <- read.delim(opt$cancer, sep = "\t", header = F, comment.char = "#") %>%
-  pull()
+cancer_path <- opt$cancer
+normal_path <- opt$normal
+
+tissue <- opt$tissue
 
 ase <- read.delim(opt$ase, header = T, comment.char = "#", stringsAsFactors = F)
 
@@ -145,6 +150,31 @@ if (is.null(indel_path) | indel_path == "") {
 }
 
 ##########################
+# Cancer
+##########################
+
+if (is.null(cancer_path) | cancer_path == "") {
+  cancer <- data.frame(gene = ase$gene)
+} else {
+  Can_genes <- read.delim(cancer_path, sep = "\t", header = F, comment.char = "#") %>% 
+    pull()
+  cancer <- data.frame(gene = ase$gene) %>%
+    dplyr::mutate(cancer_gene = gene %in% Can_genes)
+}
+
+##########################
+# Normal ASE
+##########################
+
+if (is.null(tissue) | tissue == "") {
+  normal <- data.frame(gene = ase$gene)
+} else {
+  normal <- read.delim(normal_path, sep = "\t", header = F, comment.char = "#") %>% 
+    dplyr::select(gene, tissue) %>%
+    `colnames<-`(c("gene", "normalMAF")) 
+}
+
+##########################
 # Summary Table 
 ##########################
 
@@ -156,7 +186,8 @@ summary_table <- ase %>%
   left_join(stopVar, by = "gene") %>%
   left_join(snv, by = "gene") %>%
   left_join(indel, by = "gene") %>%
-  dplyr::mutate(cancer_gene = gene %in% cancer) %>%
+  left_join(cancer, by = "gene") %>%
+  left_join(normal, by = "gene") %>%
   dplyr::mutate(sample = sample) %>%
   write.table(paste0(out, "/summaryTable.tsv"), 
               sep = "\t", quote = F, row.names = F, col.names = T)

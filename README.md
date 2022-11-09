@@ -28,14 +28,24 @@ Must have snakemake and singularity installed. Remaining software used in this w
     - Only needed if **phased option** in parameter.yaml is True   
     - Can be obtained using [WhatsHap](https://github.com/whatshap/whatshap/) with DNA long reads
     - Significantly improves precision of ASE calling
+    - Adds TFBS mutation and stop gain/loss information to summary table if **cancer_analysis option** is True
  - Copy Number Variant Data
-    - Only needed if **cancer_analysis option** in parameter.yaml is True 
+    - Only used if **cancer_analysis option** in parameter.yaml is True 
     - Can be optained using [ploidetect](https://github.com/lculibrk/Ploidetect)
     - Intersect ASE gene with allelic copy number imbalance regions
 - Allelic Methylation
-    - Only needed if **cancer_analysis option** in parameter.yaml is True 
+    - Only used if **cancer_analysis option** in parameter.yaml is True 
     - Can be optained using [NanoMethPhase](https://github.com/vahidAK/NanoMethPhase)
     - Use to intersect ASE gene with allelic methylation in promoter region
+- Somatic mutations
+    - Only used if **cancer_analysis option** in parameter.yaml is True
+    - Finds somatic mutations in ASE gene and promoters
+- Tissue type
+    - Only used if **cancer_analysis option** in parameter.yaml is True
+    - Include data for average MAF in normal tissue in summary table
+    - Otained from GTex database which ran [phASER](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-020-02122-z) to calcualte allelic expression 
+    - <ins>Possible options</ins>: allTissue, Adipose, Adrenal_gland, Bladder, Blood, Brain, Breast, Cervix, Colon, Esophagus, Fallopian_tube, Heart, Kidney, Liver, Lung, Muscle, Nerve, Ovary, Pancreas, Pituitary, Prostate, Salivary, Skin, Small_intestine, Spleen, Stomach, Testis, Thyroid, Uterus, Vagina
+
 
 # **Output**
 All output and intermediary files is found in `output/{sample}` directory. The workflow has four main section, alignment, variant calling, mbased and cancer analysis. Files from each steps are found in the corrospinding folder within `output/{sample}`. The key outputs from the workflow is located below
@@ -69,6 +79,7 @@ All output and intermediary files is found in `output/{sample}` directory. The w
 | stop_variant_allele***| Allele where stop gain/stop loss variant is found                                      |
 | somaticSNV****       | Somatic SNV found in (or around) gene (T/F)                                            |
 | somaticIndel****     | Somatic Indel found in (or around) gene (T/F)                                          |
+| normalMAF*****       | Add MAF for gene in normal tissue                                                      |
 | cancer_gene          | T/F if gene is a known cancer gene (based on `annotation/cancer_gene.txt`)             |
 | sample               | Sample Name                                                                            |
 
@@ -79,6 +90,8 @@ All output and intermediary files is found in `output/{sample}` directory. The w
 \*** Only included if phased vcf is provided
 
 \**** Only included if somatic snv and indel is provided
+
+\***** Only included if tissue type is specified
 
 # Running samples
 

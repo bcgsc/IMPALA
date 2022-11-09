@@ -27,7 +27,7 @@ option_list = list(
   make_option(c("r-", "--tissue"), type="character", default = NULL,
               help="tissue name", metavar="character"),
   make_option(c("-N", "--normal"), type="character", default = NULL,
-              help="Normal ASE", metavar="character"),
+              help="Normal ASE", metavar="character")
 )
 
 
@@ -169,7 +169,10 @@ if (is.null(cancer_path) | cancer_path == "") {
 if (is.null(tissue) | tissue == "") {
   normal <- data.frame(gene = ase$gene)
 } else {
-  normal <- read.delim(normal_path, sep = "\t", header = F, comment.char = "#") %>% 
+  normal <- read.delim(normal_path, sep = "\t", header = F, 
+                       comment.char = "#") %>% 
+    `colnames<-`(.[1, ]) %>%
+    .[-1, ] %>%
     dplyr::select(gene, tissue) %>%
     `colnames<-`(c("gene", "normalMAF")) 
 }

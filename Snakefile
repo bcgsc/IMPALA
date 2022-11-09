@@ -62,11 +62,11 @@ rule params:
 		"""
 		date >> {output}
 		printf "{wildcards.sample}\n------------------------\n\n" >> {output}
-		echo {params.sample_info} | tr  , '\n'  >> {output}
+		echo {params.sample_info}| sed 's/{{//' | sed 's/}}//' | tr  , '\n'  >> {output}
 		echo expression_matrix: {params.expressionMatrix} >> {output}
 		printf "\n------------------------\n" >> {output}
 		echo Major Allele Frequency Threshold: {params.maf} >> {output}
-		echo Genome: {params.genome_name}
+		echo Genome: {params.genome_name} >> {output}
 		echo Phased: {params.phase}  >> {output}
 		echo Cancer analysis: {params.cancer} >> {output}	
 		echo Threads: {params.threads} >> {output}
@@ -712,7 +712,7 @@ rule somaticIntersect:
 	input:
 		genes = "output/{sample}/3_cancer/somatic/geneSlop.bed",
 		variants = lambda w: config["samples"][w.sample][w.variant]
-	output: "output/{sample}/3_cancer/somatic/{variant}.vcf"
+	output: "output/{sample}/3_cancer/somatic/{variant}.bed"
 	singularity: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
 	log: "output/{sample}/log/somatic_{variant}_intersect.log"
 	shell:

@@ -14,3 +14,10 @@ annotation:
         "annotation/biomart_ensembl100_GRCh38.sorted.bed"
     hg38_no_alt_TCGA_HTMCP_HPVs:
         "annotation/biomart_ensembl100_GRCh38.sorted.bed"
+
+centromere:
+    hg19:
+    hg38:
+        "annotation/hg38.centromere.bed"
+    hg38_no_alt_TCGA_HTMCP_HPVs:
+        "annotation/hg38.centromere.bed"

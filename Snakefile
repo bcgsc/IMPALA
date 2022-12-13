@@ -829,3 +829,47 @@ rule cancerFigures:
 			--outdir=output/{wildcards.sample}/figures \
 			--sample={wildcards.sample} &> {log}
 		"""
+
+### -------------------------------------------------------------------
+### Karyogram Figure
+### -------------------------------------------------------------------
+
+def checkCNV_karyogram(wildcards):
+        if config['cancer_analysis'] and "cnv" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["cnv"] != None:
+                return config["samples"][wildcards.sample]["cnv"]
+        else:
+                return []
+
+def checkMethyl(wildcards):
+        if config['cancer_analysis'] and "methyl" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["methyl"] != None:
+                return config["samples"][wildcards.sample]["methyl"]
+        else:
+                return []
+
+rule karyogram:
+	input:
+		cnv = checkCNV_karyogram
+		dmr = checkMethyl
+		ase = "output/{sample}/summaryTable.tsv"
+		centromere = config["centromere"][config["genome_name"]]
+		chromSize = "output/{sample}/3_cancer/raw/genome.length"
+		annotation = "annotation/biomart_ensembl100_GRCh38.sorted.bed"	
+	output:
+		"output/{sample}/figures/karyogram.pdf"
+	shell:
+		"""
+		Rscript scripts/karyogramFigure.R \
+        		--chromSize={input.chromSize} \
+        		--centPos={input.centromere} \
+        		--cna={input.cnv} \
+        		--dmr={input.dmr} \
+        		--ase={input/centromere} \
+        		--genes={input.annotation} \
+        		--out=output/{wildcards.sample}/figures/karyogram
+		"""
+	
+
+
+
+
+	

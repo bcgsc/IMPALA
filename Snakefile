@@ -42,6 +42,7 @@ rule all:
 		expand("output/{sample}/params.txt",sample=sample_ids),
 		expand("output/{sample}/figures/chromPlot.pdf",sample=sample_ids),
 		expand("output/{sample}/summaryTable.tsv", sample=sample_ids),
+		expand("output/{sample}/figures/karyogram.pdf", sample = sample_ids),
 		figure
 
 ### -------------------------------------------------------------------

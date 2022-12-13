@@ -1,4 +1,9 @@
 #!/gsc/software/linux-x86_64-centos7/R-4.0.2/bin/Rscript --vanilla
+## ---------------------------------------------------------------------------
+## GENERATING THE KARYOPLOT FROM ASE DATA
+## Vanessa Porter, Dec. 2022
+## ---------------------------------------------------------------------------
+
 .libPaths("/projects/vporter_prj/R/x86_64-centos7-linux-gnu-library/4.0")
 
 library(optparse)
@@ -99,11 +104,10 @@ if (!is.null(opt$cna)){
 }
 
 ## ---------------------------------------------------------------------------
-## DIFFERENTIAL METHYLATIOM
+## DIFFERENTIAL METHYLATION
 ## ---------------------------------------------------------------------------
 
 if (!is.null(opt$dmr)){
-  # integration sites
   #dmr <- read.delim("/projects/hpv_nanopore_prj/htmcp/call_integration/output/HTMCP-03-06-02058/methylation/diff_meth.csv", header = T)
   dmr <- read.delim(opt$dmr, header = T)
   
@@ -137,6 +141,9 @@ if (!is.null(opt$dmr)){
 
 #ase <- read.delim("/projects/hpv_nanopore_prj/htmcp/ase/pull_trial/vporter-allelespecificexpression/output/HTMCP.03.06.02058/summaryTable.tsv", header = T)
 ase <- read.delim(opt$ase, header = T)
+
+# filter for ASE genes
+ase <- ase[ase$aseResults == "ASE",]
 
 # get gene positions
 ase$chr <- genes$V1[match(ase$gene, genes$V4)]

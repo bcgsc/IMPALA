@@ -40,7 +40,7 @@ else:
 rule all:
 	input:
 		expand("output/{sample}/params.txt",sample=sample_ids),
-		expand("output/{sample}/figures/chromPlot.pdf",sample=sample_ids),
+		expand("output/{sample}/figures/sankeyPlot.html",sample=sample_ids),
 		expand("output/{sample}/summaryTable.tsv", sample=sample_ids),
 		expand("output/{sample}/figures/karyogram.pdf", sample = sample_ids),
 		figure
@@ -433,7 +433,7 @@ rule figures:
 		bed = gene_anno,
 		rpkm = getExpressionMatrix
 	output:
-		"output/{sample}/figures/chromPlot.pdf"
+		"output/{sample}/figures/sankeyPlot.html"
 	singularity: "docker://glenn032787/ase_rcontainer:1.0"
 	params:
 		maf = config["maf_threshold"]

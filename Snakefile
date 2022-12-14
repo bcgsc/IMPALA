@@ -40,8 +40,9 @@ else:
 rule all:
 	input:
 		expand("output/{sample}/params.txt",sample=sample_ids),
-		expand("output/{sample}/figures/chromPlot.pdf",sample=sample_ids),
+		expand("output/{sample}/figures/sankeyPlot.html",sample=sample_ids),
 		expand("output/{sample}/summaryTable.tsv", sample=sample_ids),
+		expand("output/{sample}/figures/karyogram.pdf", sample = sample_ids),
 		figure
 
 ### -------------------------------------------------------------------
@@ -432,7 +433,7 @@ rule figures:
 		bed = gene_anno,
 		rpkm = getExpressionMatrix
 	output:
-		"output/{sample}/figures/chromPlot.pdf"
+		"output/{sample}/figures/sankeyPlot.html"
 	singularity: "docker://glenn032787/ase_rcontainer:1.0"
 	params:
 		maf = config["maf_threshold"]
@@ -469,7 +470,8 @@ rule annotateGenes:
 		mkdir -p output/{wildcards.sample}/3_cancer/raw
 
 		cat {input} | cut -f1 > {output.gene} 2> {log}
-		awk 'NR == FNR {{ keywords[$1]=1; next; }} {{ if ($4 in keywords) print; }}' {output.gene} {params.annotation} > {output.bed} 2> {log}
+		awk 'NR == FNR {{ keywords[$1]=1; next; }} {{ if ($4 in keywords) print; }}' {output.gene} {params.annotation} | \
+			cut -f 1,2,3,4 | uniq > {output.bed} 2> {log}
 		"""
 
 
@@ -518,7 +520,7 @@ rule cnvIntersect:
 	shell:
 		"""
 		mkdir -p output/{wildcards.sample}/3_cancer/intersect
-		bedtools intersect -loj -a {input.gene} -b {input.cnv} | awk '$9 != "." {{print $0}}' > {output} 2> {log}
+		bedtools intersect -loj -a {input.gene} -b {input.cnv} | awk '$10 != "." {{print $0}}' > {output} 2> {log}
 		"""
 
 
@@ -549,7 +551,7 @@ rule methylIntersect:
 	shell:
 		"""
 		mkdir -p output/{wildcards.sample}/3_cancer/intersect
-		bedtools intersect -loj -a {input.gene} -b {input.methyl} | awk '$9 != "." {{print $0}}' > {output} 2> {log}
+		bedtools intersect -loj -a {input.gene} -b {input.methyl} | awk '$10 != "." {{print $0}}' > {output} 2> {log}
 		"""
 
 
@@ -828,3 +830,47 @@ rule cancerFigures:
 			--outdir=output/{wildcards.sample}/figures \
 			--sample={wildcards.sample} &> {log}
 		"""
+
+### -------------------------------------------------------------------
+### Karyogram Figure
+### -------------------------------------------------------------------
+
+def checkCNV_karyogram(wildcards):
+        if config['cancer_analysis'] and "cnv" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["cnv"] != None:
+                return config["samples"][wildcards.sample]["cnv"]
+        else:
+                return []
+
+def checkMethyl(wildcards):
+        if config['cancer_analysis'] and "methyl" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["methyl"] != None:
+                return config["samples"][wildcards.sample]["methyl"]
+        else:
+                return []
+
+rule karyogram:
+	input:
+		cnv = checkCNV_karyogram
+		dmr = checkMethyl
+		ase = "output/{sample}/summaryTable.tsv"
+		centromere = config["centromere"][config["genome_name"]]
+		chromSize = "output/{sample}/3_cancer/raw/genome.length"
+		annotation = "annotation/biomart_ensembl100_GRCh38.sorted.bed"	
+	output:
+		"output/{sample}/figures/karyogram.pdf"
+	shell:
+		"""
+		Rscript scripts/karyogramFigure.R \
+        		--chromSize={input.chromSize} \
+        		--centPos={input.centromere} \
+        		--cna={input.cnv} \
+        		--dmr={input.dmr} \
+        		--ase={input/centromere} \
+        		--genes={input.annotation} \
+        		--out=output/{wildcards.sample}/figures/karyogram
+		"""
+	
+
+
+
+
+	

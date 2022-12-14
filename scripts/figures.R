@@ -165,23 +165,5 @@ sankey <- sankeyNetwork(Links = links, Nodes = nodes,
 
 saveWidget(sankey, file=paste0(out, "/sankeyPlot.html"), selfcontained = F)
 
-####
-#### CHROMPLOT
-####
-
-genes1 <- df[df$colour_filt == mafG_padjG,"gene"]
-genes2 <- df[df$colour_filt != mafG_padjG,"gene"]
-
-bed1 <- data.frame(Chrom = all_genes$V1[all_genes$V4 %in% genes1], 
-                   Start = all_genes$V2[all_genes$V4 %in% genes1],
-                   End = all_genes$V3[all_genes$V4 %in% genes1])
-bed2 <- data.frame(Chrom = all_genes$V1[all_genes$V4 %in% genes2], 
-                   Start = all_genes$V2[all_genes$V4 %in% genes2],
-                   End = all_genes$V3[all_genes$V4 %in% genes2])
-
-pdf(paste0(out, "/chromPlot.pdf"), width = 9, height = 8)
-chromPlot(gaps=hg_gap, annot1=bed1, annot2 = bed2, colAnnot1 = "#e74645", colAnnot2 = "grey",  bands=hg_cytoBandIdeo, bin = 1000000, chrSide=c(-1,1,1,1,1,1,1,1))
-dev.off()
-
 
 print("Figures completed")

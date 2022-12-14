@@ -74,8 +74,7 @@ centPos$centre <- centPos$centre/1000000
 ## ---------------------------------------------------------------------------
 ## COPY NUMBER
 ## ---------------------------------------------------------------------------
-
-if (!is.null(opt$cna)){
+if (!is.null(opt$cna) & opt$cna != ""){
   #cna <- read.delim("/projects/hpv_nanopore_prj/htmcp/ploidetect/illumina/Ploidetect-pipeline/ploidetect_out/HTMCP-03-06-02058/A37261_A37189/cna_condensed.txt", header = T)
   cna <- read.delim(opt$cna, header = T)
   cna$chr <- paste0("chr", cna$chr)
@@ -107,7 +106,7 @@ if (!is.null(opt$cna)){
 ## DIFFERENTIAL METHYLATION
 ## ---------------------------------------------------------------------------
 
-if (!is.null(opt$dmr)){
+if (!is.null(opt$dmr) & opt$dmr != ""){
   #dmr <- read.delim("/projects/hpv_nanopore_prj/htmcp/call_integration/output/HTMCP-03-06-02058/methylation/diff_meth.csv", header = T)
   dmr <- read.delim(opt$dmr, header = T)
   
@@ -181,7 +180,7 @@ asePlot$pos <- as.numeric(asePlot$pos)
 
 ##### CNV AND DMRs AVAILABLE
 
-if (!is.null(opt$dmr) & !is.null(opt$cna)){
+if (!is.null(opt$dmr) & opt$dmr != "" & !is.null(opt$cna) & opt$cna != ""){
   # legend
   adL <- data.frame(xmin = c(9.7, 9.7, 9.7, 10.3,9.7,10.3,7.1,7.1), xmax = c(10.35, 10.35,9.75,10.35,9.75,10.35,7.26,7.26), ymin = c(240,210,238,238,208,208,235,205), ymax = c(243,213,243,243,213,213,245,215),
                     fill = c("ase","dmr","ase","ase","dmr","dmr", "gain", "loh"))
@@ -276,7 +275,7 @@ if (!is.null(opt$dmr) & !is.null(opt$cna)){
           legend.position = "none")+
     labs(x=NULL,y=NULL)
   
-} else if (!is.null(opt$cna)){ ### CNVs BUT NO DMRs
+} else if (!is.null(opt$cna) & opt$cna != ""){ ### CNVs BUT NO DMRs
   # legend
   adL <- data.frame(xmin = c(9.7, 9.7, 10.3,7.1,7.1), xmax = c(10.35, 9.75,10.35,7.26,7.26), ymin = c(240,238,238,235,205), ymax = c(243,243,243,245,215),
                     fill = c("ase","ase","ase","gain", "loh"))
@@ -361,7 +360,7 @@ if (!is.null(opt$dmr) & !is.null(opt$cna)){
           legend.position = "none")+
     labs(x=NULL,y=NULL)
   
-} else if (!is.null(opt$dmr)){ ## DMRs BUT NO CNV
+} else if (!is.null(opt$dmr) & opt$dmr != ""){ ## DMRs BUT NO CNV
   # legend
   adL <- data.frame(xmin = c(9.7, 9.7, 9.7, 10.3,9.7,10.3), xmax = c(10.35, 10.35,9.75,10.35,9.75,10.35), ymin = c(240,210,238,238,208,208), ymax = c(243,213,243,243,213,213),
                     fill = c("ase","dmr","ase","ase","dmr","dmr"))

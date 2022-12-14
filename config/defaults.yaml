@@ -18,6 +18,6 @@ annotation:
 centromere:
     hg19:
     hg38:
-        "annotation/hg38.centromere.bed"
+        "annotation/hg38_centromere_positions.bed"
     hg38_no_alt_TCGA_HTMCP_HPVs:
-        "annotation/hg38.centromere.bed"
+        "annotation/hg38_centromere_positions.bed"

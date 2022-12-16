@@ -40,6 +40,9 @@ Must have snakemake and singularity installed. Remaining software used in this w
 - Somatic mutations
     - Only used if **cancer_analysis option** in parameter.yaml is True
     - Finds somatic mutations in ASE gene and promoters
+- Tumor Content
+    - Used to calcualte the expected Major Allele Frequency 
+    - Assumes 1.0 if not specified
 - Tissue type
     - Only used if **cancer_analysis option** in parameter.yaml is True
     - Include data for average MAF in normal tissue in summary table
@@ -64,7 +67,7 @@ All output and intermediary files is found in `output/{sample}` directory. The w
 | Column               | Description                                                                            | 
 | :---                 |    :----:                                                                              |  
 | gene                 | HGNC gene symbol                                                                       | 
-| RPKM                 | Expression level                                                                       | 
+| Expression           | Expression level                                                                       | 
 | allele1IsMajor       | T/F if allele 1 is the major allele (allele 1 = HP1)                                   | 
 | majorAlleleFrequency | Major allele frequency                                                                 | 
 | padj                 | Benjamini-Hochberg adjusted pvalue                                                     | 

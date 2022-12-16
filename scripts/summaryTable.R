@@ -183,6 +183,7 @@ if (is.null(tissue) | tissue == "") {
 
 summary_table <- ase %>%
   dplyr::select(gene, RPKM, allele1IsMajor, majorAlleleFrequency, padj, aseResults) %>%
+  dplyr::rename("expression" = RPKM)
   left_join(cnv, by = "gene") %>%
   left_join(dmr, by = "gene") %>%
   left_join(tfbs, by = "gene") %>%

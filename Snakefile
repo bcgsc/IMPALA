@@ -498,15 +498,24 @@ rule promoterFlank:
 		bedtools flank -l 2000 -r 500 -i {input.gene} -g {input.length} > {output} 2> {log}
 		"""
 
+def getTumorContent(wildcards):
+	if "tumorContent" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["tumorContent"] != None:
+                return config["samples"][wildcards.sample]["tumorContent"]
+        else:
+                return 1.0
+
 rule cnv_preprocess:
 	input:  lambda w: config["samples"][w.sample]["cnv"]
 	output: "output/{sample}/3_cancer/raw/cnv.bed"
+	params: 
+		tumor = getTumorContent
 	singularity: "docker://glenn032787/ase_rcontainer:1.0"
 	log: "output/{sample}/log/cnv_preprocess.log"
 	shell:
 		"""
 		Rscript scripts/cnv_preprocess.R \
 			--cnv={input} \
+			--tumorContent={params.tumor} \
 			--outdir=output/{wildcards.sample}/3_cancer/raw &> {log}
 		"""
 

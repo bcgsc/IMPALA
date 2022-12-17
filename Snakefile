@@ -500,9 +500,9 @@ rule promoterFlank:
 
 def getTumorContent(wildcards):
 	if "tumorContent" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["tumorContent"] != None:
-                return config["samples"][wildcards.sample]["tumorContent"]
-        else:
-                return 1.0
+ 		return config["samples"][wildcards.sample]["tumorContent"]
+	else:
+		return 1.0
 
 rule cnv_preprocess:
 	input:  lambda w: config["samples"][w.sample]["cnv"]
@@ -845,24 +845,24 @@ rule cancerFigures:
 ### -------------------------------------------------------------------
 
 def checkCNV_karyogram(wildcards):
-        if config['cancer_analysis'] and "cnv" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["cnv"] != None:
-                return config["samples"][wildcards.sample]["cnv"]
-        else:
-                return []
+	if config['cancer_analysis'] and "cnv" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["cnv"] != None:
+		return config["samples"][wildcards.sample]["cnv"]
+	else:
+		return []
 
 def checkMethyl(wildcards):
-        if config['cancer_analysis'] and "methyl" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["methyl"] != None:
-                return config["samples"][wildcards.sample]["methyl"]
-        else:
-                return []
+	if config['cancer_analysis'] and "methyl" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["methyl"] != None:
+		return config["samples"][wildcards.sample]["methyl"]
+	else:
+		return []
 
 rule karyogram:
 	input:
-		cnv = checkCNV_karyogram
-		dmr = checkMethyl
-		ase = "output/{sample}/summaryTable.tsv"
-		centromere = config["centromere"][config["genome_name"]]
-		chromSize = "output/{sample}/3_cancer/raw/genome.length"
+		cnv = checkCNV_karyogram,
+		dmr = checkMethyl,
+		ase = "output/{sample}/summaryTable.tsv",
+		centromere = config["centromere"][config["genome_name"]],
+		chromSize = "output/{sample}/3_cancer/raw/genome.length",
 		annotation = "annotation/biomart_ensembl100_GRCh38.sorted.bed"	
 	output:
 		"output/{sample}/figures/karyogram.pdf"

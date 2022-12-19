@@ -3,9 +3,6 @@
 ## GENERATING THE KARYOPLOT FROM ASE DATA
 ## Vanessa Porter, Dec. 2022
 ## ---------------------------------------------------------------------------
-
-.libPaths("/projects/vporter_prj/R/x86_64-centos7-linux-gnu-library/4.0")
-
 library(optparse)
 
 ## ---------------------------------------------------------------------------
@@ -80,7 +77,7 @@ if (!is.null(opt$cna) & opt$cna != ""){
   cna$chr <- paste0("chr", cna$chr)
   
   # rearrange to make a bed file
-  cna_bed <- cna[,c(1,3,4,5,7,9,10)]
+  cna_bed <- cna[,c("chr", "pos", "end", "CN", "zygosity", "A", "B")]
   
   # categorize copy number
   cna_bed <- cna_bed %>%

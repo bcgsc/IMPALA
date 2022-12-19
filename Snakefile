@@ -866,6 +866,7 @@ rule karyogram:
 		annotation = "annotation/biomart_ensembl100_GRCh38.sorted.bed"	
 	output:
 		"output/{sample}/figures/karyogram.pdf"
+	singularity: "docker://glenn032787/ase_rcontainer:1.0"
 	shell:
 		"""
 		Rscript scripts/karyogramFigure.R \
@@ -873,7 +874,7 @@ rule karyogram:
         		--centPos={input.centromere} \
         		--cna={input.cnv} \
         		--dmr={input.dmr} \
-        		--ase={input/centromere} \
+        		--ase={input.ase} \
         		--genes={input.annotation} \
         		--out=output/{wildcards.sample}/figures/karyogram
 		"""

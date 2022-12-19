@@ -175,7 +175,7 @@ rule rsemExpressionMatrix:
 	output: "output/{sample}/0_alignment/expression_matrix.tsv"
 	params:
 		annotation = "annotation/biomart_ensembl100_GRCh38.sorted.bed"
-	singularity: "docker://glenn032787/ase_rcontainer:1.0"
+	singularity: "docker://glenn032787/ase_rcontainer:2.0"
 	log: "output/{sample}/log/rsemExpressionMatrix.log"
 	shell:
 		"""
@@ -376,7 +376,7 @@ if phased:
         		"output/{sample}/2_mBASED/MBASEDresults.rds"
     		threads: config["threads"]
     		log: "output/{sample}/log/mbased.log"
-		singularity: "docker://glenn032787/ase_rcontainer:1.0"
+		singularity: "docker://glenn032787/ase_rcontainer:2.0"
     		shell:
         		"""
 				Rscript scripts/mbased.snpEff.R \
@@ -392,7 +392,7 @@ else:
 			output:
 				"output/{sample}/2_mBASED/MBASEDresults.rds"
 			threads: config["threads"]
-			singularity: "docker://glenn032787/ase_rcontainer:1.0"
+			singularity: "docker://glenn032787/ase_rcontainer:2.0"
 			log: "output/{sample}/log/mbased.log"
 			shell:
 				"""
@@ -412,7 +412,7 @@ rule addExpression:
 		rds = "output/{sample}/2_mBASED/MBASEDresults.rds",
 		rpkm = getExpressionMatrix
 	output: "output/{sample}/2_mBASED/MBASED_expr_gene_results.txt"
-	singularity: "docker://glenn032787/ase_rcontainer:1.0"
+	singularity: "docker://glenn032787/ase_rcontainer:2.0"
 	params:
 		maf = config["maf_threshold"]
 	log: "output/{sample}/log/addExpression.log"
@@ -434,7 +434,7 @@ rule figures:
 		rpkm = getExpressionMatrix
 	output:
 		"output/{sample}/figures/sankeyPlot.html"
-	singularity: "docker://glenn032787/ase_rcontainer:1.0"
+	singularity: "docker://glenn032787/ase_rcontainer:2.0"
 	params:
 		maf = config["maf_threshold"]
 	log: "output/{sample}/log/figures.log"
@@ -509,7 +509,7 @@ rule cnv_preprocess:
 	output: "output/{sample}/3_cancer/raw/cnv.bed"
 	params: 
 		tumor = getTumorContent
-	singularity: "docker://glenn032787/ase_rcontainer:1.0"
+	singularity: "docker://glenn032787/ase_rcontainer:2.0"
 	log: "output/{sample}/log/cnv_preprocess.log"
 	shell:
 		"""
@@ -540,7 +540,7 @@ rule cnvIntersect:
 rule dmr_preprocess:
         input: lambda w: config["samples"][w.sample]["methyl"]
         output: "output/{sample}/3_cancer/raw/methyl.bed"
-        singularity: "docker://glenn032787/ase_rcontainer:1.0"
+        singularity: "docker://glenn032787/ase_rcontainer:2.0"
         log: "output/{sample}/log/dmr_preprocess.log"
         shell:
                 """
@@ -624,7 +624,7 @@ rule compareTFBS:
 		expression_matrix = getExpressionMatrix,
 		id2gene = "output/{sample}/3_cancer/tfbs/id2gene.txt"
 	output: "output/{sample}/3_cancer/tfbs/motifDiff.tsv"
-	singularity: "docker://glenn032787/ase_rcontainer:1.0"
+	singularity: "docker://glenn032787/ase_rcontainer:2.0"
 	params: 
 		tf_list = "annotation/human_mono_motifs.tsv"
 	log: "output/{sample}/log/compareTFBS.log"
@@ -691,7 +691,7 @@ rule snpSiftPhase:
 rule getStopMutation:
 	input: "output/{sample}/3_cancer/stopVar/phase.annotate.tsv"
 	output: "output/{sample}/3_cancer/stopVar/stop_variant.tsv"
-	singularity: "docker://glenn032787/ase_rcontainer:1.0"
+	singularity: "docker://glenn032787/ase_rcontainer:2.0"
 	log: "output/{sample}/log/getStopMutation.log"
 	shell:
 		"""
@@ -797,7 +797,7 @@ rule summaryTableCancer:
 		indel = checkSomaticIndel,
 		ase = "output/{sample}/2_mBASED/MBASED_expr_gene_results.txt" 
 	output: "output/{sample}/summaryTable.tsv"
-	singularity: "docker://glenn032787/ase_rcontainer:1.0"
+	singularity: "docker://glenn032787/ase_rcontainer:2.0"
 	params:
 		cancer=checkCancerAnalysis,
 		normal="annotation/phaserNormalASE.tsv",
@@ -828,7 +828,7 @@ rule summaryTableCancer:
 rule cancerFigures:
 	input: "output/{sample}/summaryTable.tsv"
 	output: "output/{sample}/figures/aseCause.pdf"
-	singularity: "docker://glenn032787/ase_rcontainer:1.0"
+	singularity: "docker://glenn032787/ase_rcontainer:2.0"
 	log: "output/{sample}/log/cancerFigures.log" 
 	shell:
 		"""
@@ -866,7 +866,7 @@ rule karyogram:
 		annotation = "annotation/biomart_ensembl100_GRCh38.sorted.bed"	
 	output:
 		"output/{sample}/figures/karyogram.pdf"
-	singularity: "docker://glenn032787/ase_rcontainer:1.0"
+	singularity: "docker://glenn032787/ase_rcontainer:2.0"
 	shell:
 		"""
 		Rscript scripts/karyogramFigure.R \

@@ -58,10 +58,10 @@ if (is.null(cnv_path) | cnv_path == "") {
   cnv <- data.frame(gene = ase$gene)
 } else {
   cnv <- read.delim(cnv_path, header = F, comment.char = "#") %>%
-    dplyr::select(V4, V13, V14, V16) %>%
-    dplyr::mutate(V13 = as.numeric(V13)) %>%
-    dplyr::mutate(V14 = as.numeric(V14)) %>%
-    dplyr::mutate(V16 = as.numeric(V16)) %>%
+    dplyr::select(V4, V8, V9, V11) %>%
+    dplyr::mutate(V8 = as.numeric(V8)) %>%
+    dplyr::mutate(V9 = as.numeric(V9)) %>%
+    dplyr::mutate(V11 = as.numeric(V11)) %>%
     `colnames<-`(c("gene", "cnv.A", "cnv.B", "expectedMAF")) %>%
     group_by(gene) %>% 
     summarize(cnv.A = mean(cnv.A), cnv.B = mean(cnv.B), expectedMAF = mean(expectedMAF)) %>%
@@ -80,8 +80,8 @@ if ( is.null(methyl_path) | methyl_path == "") {
   dmr <- data.frame(gene = ase$gene)
 } else {
   dmr <- read.delim(methyl_path, header = F, comment.char = "#", stringsAsFactors = F) %>%
-    dplyr::filter(V10 != ".") %>%
-    dplyr::select(V4, V13, V14, V15) %>%
+    dplyr::filter(V5 != ".") %>%
+    dplyr::select(V4, V8, V9, V10) %>%
     `colnames<-`(c("gene", "methyl.A", "methyl.B", "diff.Methyl")) %>%
     dplyr::mutate(diff.Methyl = as.numeric(diff.Methyl)) %>%
     group_by(gene) %>%

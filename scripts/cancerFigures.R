@@ -74,6 +74,27 @@ if ("cnv_state" %in% column) {
   
   ggsave(filename = paste0(out, "/expectMAF.pdf"), plot = expectMAF, units = "in")
   
+  #### TEST CORRELATION PLOT ####
+  summary_table %>%
+    dplyr::filter(cnv_state == "imbalance") %>%
+    dplyr::filter(padj <= 0.05) %>%
+    dplyr::filter(!is.na(cnv_state)) %>%
+    dplyr::mutate(rawExpectedMAF = pmax(cnv.A, cnv.B)/(cnv.A + cnv.B)) %>%
+    ggplot(aes(majorAlleleFrequency, rawExpectedMAF)) +
+    geom_point(aes(color = aseResults), alpha = 0.5) +
+    geom_smooth(method = "lm", se = FALSE) +
+    ylab("CNV expected MAF") + 
+    xlab("MBASED Major Allele Frequency") + 
+    ggtitle("Correlation between CNV expected MAF and \nMBASED MAF for CNV Imbalanced genes",
+            subtitle = sample) + 
+    theme_bw() + 
+    scale_fill_npg() +
+    scale_color_npg() + 
+    theme(axis.line = element_line(colour = "black"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          panel.background = element_blank()) 
 }
  
 

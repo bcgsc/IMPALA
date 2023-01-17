@@ -341,8 +341,17 @@ if ("tf_allele" %in% column) {
 cancer_bar <- summary_table %>%
   dplyr::filter(cancer_gene) %>%
   ggplot(aes(aseResults)) + 
-  geom_bar() +
-  ggtitle("MBASED result for cancer genes", subtitle=sample)
+  geom_bar(aes(fill = aseResults)) +
+  theme_bw() +
+  scale_fill_npg() +
+  scale_color_npg() +
+  ggtitle("MBASED result for cancer genes", subtitle=sample) +
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(), 
+        legend.position = "none") 
 ggsave(filename = paste0(out, "/cancerBar.pdf"), plot = cancer_bar, units = "in")
 
 #######################

@@ -11,6 +11,13 @@ annotation:
     hg19:
         "/gsc/resources/annotation/Homo_sapiens.GRCh37.87.gtf"
     hg38:
-        "annotation/biomart_ensembl100_GRCh38.sorted.bed.gz"
+        "annotation/biomart_ensembl100_GRCh38.sorted.bed"
     hg38_no_alt_TCGA_HTMCP_HPVs:
-        "annotation/biomart_ensembl100_GRCh38.sorted.bed.gz"
+        "annotation/biomart_ensembl100_GRCh38.sorted.bed"
+
+centromere:
+    hg19:
+    hg38:
+        "annotation/hg38_centromere_positions.bed"
+    hg38_no_alt_TCGA_HTMCP_HPVs:
+        "annotation/hg38_centromere_positions.bed"

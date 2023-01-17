@@ -33,6 +33,8 @@ option_list = list(
               help="Sample name", metavar="character"),
   make_option(c("-m", "--min"), type="numeric", default = 1,
               help="Minimum RPKM value", metavar="numeric"),
+  make_option(c("-t", "--maf_threshold"), type="numeric", default = 0.75,
+              help="Minimum RPKM value", metavar="numeric"),
   make_option(c("-o", "--outdir"), type="character", default = NULL,
               help="Output directory", metavar="character")
 )
@@ -50,6 +52,13 @@ all_genes <- read.delim(opt$gene, header = F, stringsAsFactors = F)
 out <- opt$outdir
 sample <- opt$sample
 min <- opt$min
+maf_threshold <- opt$maf_threshold
+
+mafG_padjG <- paste0("MAF > ", maf_threshold, " & padj > 0.05")
+mafL_padjG <- paste0("MAF < ", maf_threshold, " & padj > 0.05")
+mafG_padjL <- paste0("MAF > ", maf_threshold, " & padj < 0.05")
+mafL_padjL <- paste0("MAF < ", maf_threshold, " & padj < 0.05")
+
 
 # fix sample name
 sample <- ifelse(length(grep("-", sample)) == 0, sample, gsub("-", ".", sample))
@@ -59,16 +68,16 @@ rpkm_sample <- rpkm[,c("gene", sample)]
 colnames(rpkm_sample) <- c("gene", "expr")
 
 # make a colour filter
-df$colour_filt <- ifelse(df$padj < 0.05 & df$majorAlleleFrequency > 0.75, "MAF > 0.75 & padj < 0.05",
-                         ifelse(df$padj > 0.05 & df$majorAlleleFrequency > 0.75, "MAF > 0.75 & padj > 0.05",
-                                ifelse(df$padj > 0.05 & df$majorAlleleFrequency < 0.75, "MAF < 0.75 & padj > 0.05", "MAF < 0.75 & padj < 0.05")))
+df$colour_filt <- ifelse(df$padj < 0.05 & df$majorAlleleFrequency > maf_threshold, mafG_padjL,
+                         ifelse(df$padj > 0.05 & df$majorAlleleFrequency > maf_threshold, mafG_padjG,
+                                ifelse(df$padj > 0.05 & df$majorAlleleFrequency < maf_threshold, mafL_padjG, mafL_padjL)))
 
 # add the chromosome
 df$chr <- all_genes$V1[match(df$gene, all_genes$V4)]
 
 # set the factor levels
-df$colour_filt <- factor(df$colour_filt, levels = c("MAF > 0.75 & padj < 0.05", "MAF < 0.75 & padj < 0.05", 
-                                                    "MAF > 0.75 & padj > 0.05", "MAF < 0.75 & padj > 0.05"))
+df$colour_filt <- factor(df$colour_filt, levels = c(mafG_padjL, mafL_padjL, 
+                                                    mafG_padjG, mafL_padjG))
 df$chr <- factor(df$chr, levels = c(paste0("chr", 1:22), "chrX"))
 df <- df[complete.cases(df),]
 
@@ -83,8 +92,8 @@ dotplot <- ggplot(df, aes(x = majorAlleleFrequency, y = padj, colour = colour_fi
   scale_color_manual(values = c("#e74645", "black", "black", "grey")) +
   theme_bw() + 
   geom_hline(yintercept = 0.05, linetype = 2) +
-  geom_vline(xintercept = 0.75, linetype = 2) +
-  geom_text(aes(label = paste0(table(colour_filt)["MAF > 0.75 & padj < 0.05"], " ASE genes"), x = 0.9, y = 0.75), size = 4.5, colour = "#e74645") +
+  geom_vline(xintercept = maf_threshold, linetype = 2) +
+  geom_text(aes(label = paste0(table(colour_filt)[mafG_padjL], " ASE genes"), x = 0.9, y = 0.75), size = 4.5, colour = "#e74645") +
   labs(x = "major allele frequency", y = "adjusted pvalue", colour = NULL) +
   theme(legend.position = "none", 
         axis.title = element_text(size = 12, face = "bold", colour = "black"),
@@ -123,10 +132,10 @@ rpkm_sample_filt2 <- rpkm_sample_filt1[rpkm_sample_filt1$expr > min,]
 a <- nrow(rpkm_sample_filt1)
 b <- c(nrow(rpkm_sample_filt2),nrow(rpkm_sample_filt1[rpkm_sample_filt1$expr <= min,] ))
 c <- c(nrow(df),nrow(rpkm_sample_filt2[!rpkm_sample_filt2$gene %in% df$gene,]))
-d <- c(nrow(df[df$padj < 0.05 & df$majorAlleleFrequency > 0.75,]),
-       sum(nrow(df[df$padj >= 0.05 & df$majorAlleleFrequency <= 0.75,]),
-           nrow(df[df$padj >= 0.05 & df$majorAlleleFrequency > 0.75,]),
-           nrow(df[df$padj < 0.05 & df$majorAlleleFrequency <= 0.75,])))
+d <- c(nrow(df[df$padj < 0.05 & df$majorAlleleFrequency > maf_threshold,]),
+       sum(nrow(df[df$padj >= 0.05 & df$majorAlleleFrequency <= maf_threshold,]),
+           nrow(df[df$padj >= 0.05 & df$majorAlleleFrequency > maf_threshold,]),
+           nrow(df[df$padj < 0.05 & df$majorAlleleFrequency <= maf_threshold,])))
 
 # create a connection data frame
 links <- data.frame(
@@ -155,24 +164,6 @@ sankey <- sankeyNetwork(Links = links, Nodes = nodes,
                         sinksRight=FALSE, fontSize = 18)
 
 saveWidget(sankey, file=paste0(out, "/sankeyPlot.html"), selfcontained = F)
-
-####
-#### CHROMPLOT
-####
-
-genes1 <- df[df$colour_filt == "MAF > 0.75 & padj < 0.05","gene"]
-genes2 <- df[df$colour_filt != "MAF > 0.75 & padj < 0.05","gene"]
-
-bed1 <- data.frame(Chrom = all_genes$V1[all_genes$V4 %in% genes1], 
-                   Start = all_genes$V2[all_genes$V4 %in% genes1],
-                   End = all_genes$V3[all_genes$V4 %in% genes1])
-bed2 <- data.frame(Chrom = all_genes$V1[all_genes$V4 %in% genes2], 
-                   Start = all_genes$V2[all_genes$V4 %in% genes2],
-                   End = all_genes$V3[all_genes$V4 %in% genes2])
-
-pdf(paste0(out, "/chromPlot.pdf"), width = 9, height = 8)
-chromPlot(gaps=hg_gap, annot1=bed1, annot2 = bed2, colAnnot1 = "#e74645", colAnnot2 = "grey",  bands=hg_cytoBandIdeo, bin = 1000000, chrSide=c(-1,1,1,1,1,1,1,1))
-dev.off()
 
 
 print("Figures completed")

@@ -20,6 +20,8 @@ option_list = list(
               help="RPKM matrix", metavar="character"),
   make_option(c("-m", "--min"), type="numeric", default = 1,
               help="Minimum RPKM value", metavar="numeric"),
+  make_option(c("-t", "--maf_threshold"), type="numeric", default = 0.60,
+              help="Threshold for MAF to consider as ASE", metavar="numeric"),
   make_option(c("-o", "--outdir"), type="character", default = "mBASED",
               help="Output directory name", metavar="character")
 )
@@ -36,6 +38,7 @@ sample <- opt$sample
 rpkm <- read.delim(opt$rpkm, header = T, stringsAsFactors = F) 
 results <- readRDS(opt$mbased)
 min <- opt$min
+maf_threshold <- opt$maf_threshold 
 
 ## ---------------------------------------------------------------------------
 ## VARIABLES
@@ -57,10 +60,10 @@ results_filt <- results$geneOutput[results$geneOutput$RPKM > min, ]
 results_filt <- results_filt[!is.na(results_filt$RPKM),] 
 
 # MAF filter
-results_filt$MAF <- as.factor(ifelse(results_filt$majorAlleleFrequency > 0.75, "MAF > 0.75", "MAF < 0.75"))
-results_filt$aseResults <- as.factor(ifelse(results_filt$majorAlleleFrequency > 0.75 & results_filt$padj < 0.05, "ASE", "BAE"))
+results_filt$MAF <- as.factor(ifelse(results_filt$majorAlleleFrequency > maf_threshold, paste0("MAF > ", maf_threshold), paste0("MAF < ", maf_threshold)))
+results_filt$aseResults <- as.factor(ifelse(results_filt$majorAlleleFrequency > maf_threshold & results_filt$padj < 0.05, "ASE", "BAE"))
 
-# rearrange columns to a logical orger
+# rearrange columns to a logical order
 results_filt <- results_filt[,c("gene", "geneBiotype", "RPKM", "allele1IsMajor","majorAlleleFrequency", 
                                 "pValueASE", "pValueHeterogeneity", "padj",
                                 "significance", "MAF", "aseResults")]

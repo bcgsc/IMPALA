@@ -22,6 +22,7 @@ jobs:
     steps:
       - name: Download chr22 fasta file
         run: | 
+          mkdir -p example
           wget --directory-prefix=example/ https://hgdownload.cse.ucsc.edu/goldenpath/hg38/chromosomes/chr22.fa.gz 
           gunzip example/chr22.fa.gz
       - name: Index chr22 fasta

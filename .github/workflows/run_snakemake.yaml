@@ -1,5 +1,5 @@
 name: GitHub Actions Demo
-run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+run-name: ${{ github.actor }} testing Snakemake workflow 🚀
 on: [push]
 jobs:
   Explore-GitHub-Actions:
@@ -15,18 +15,18 @@ jobs:
       - name: List files in the repository
         run: |
           ls 
-      - name: Download chr22 fasta file
-        run: | 
-          wget --directory-prefix=example/ https://hgdownload.cse.ucsc.edu/goldenpath/hg38/chromosomes/chr22.fa.gz 
-          gunzip example/chr22.fa.gz
   Samtools-Index:
     runs-on: ubuntu-latest
     container: 
       image: docker://quay.io/biocontainers/samtools:1.16.1--h6899075_1
     steps:
+      - name: Download chr22 fasta file
+        run: | 
+          wget --directory-prefix=example/ https://hgdownload.cse.ucsc.edu/goldenpath/hg38/chromosomes/chr22.fa.gz 
+          gunzip example/chr22.fa.gz
       - name: Index chr22 fasta
         run: |
-          samtool index example/chr22.fa
+          samtools index example/chr22.fa
   SnpEff-database:
     runs-on: ubuntu-latest
     container: 

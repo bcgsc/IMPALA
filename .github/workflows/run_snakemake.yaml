@@ -27,7 +27,7 @@ jobs:
           gunzip example/chr22.fa.gz
       - name: Index chr22 fasta
         run: |
-          samtools index example/chr22.fa
+          samtools faidx example/chr22.fa
   SnpEff-database:
     runs-on: ubuntu-latest
     container: 

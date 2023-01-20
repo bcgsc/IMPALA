@@ -2,7 +2,7 @@ name: Test Snakemake workflow
 run-name: ${{ github.actor }} testing Snakemake workflow 🚀
 on: [push]
 jobs:
-  Run Snakemake workflow:
+  Run-Snakemake-workflow:
     runs-on: ubuntu-latest
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event. "

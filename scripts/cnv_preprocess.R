@@ -27,10 +27,11 @@ cnv %>%
     A == B ~ "balance"
   )) %>%
   dplyr::select(chr, pos, end, A, B, type) %>%
-  dplyr::mutate(chr = case_when(
-    grepl("^chr", chr) ~ chr,
-    TRUE ~ paste0("chr", chr)
-  )) %>%
+  #dplyr::mutate(chr2 = case_when(
+  #  grepl("^chr", chr) ~ chr,
+  #  TRUE ~ paste0("chr", chr)
+  #)) %>%
+  dplyr::mutate(chr = ifelse(grepl("^chr", chr), chr, paste0("chr", chr))) %>%
   dplyr::mutate(rawExpectedMAF = pmax(A, B)/(A + B)) %>%
   dplyr::mutate(expectedMAF = (rawExpectedMAF * TumorContent) + (0.5 * (1 - TumorContent))) %>%
   dplyr::select(-rawExpectedMAF) %>%

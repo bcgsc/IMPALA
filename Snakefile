@@ -3,6 +3,7 @@ configfile: "config/defaults.yaml"
 configfile: "config/samples.yaml"
 configfile: "config/parameters.yaml"
 
+
 # path to the reference genome fasta
 genome_path = config["genome"][config["genome_name"]]
 genome_name = {"hg19": "GRCh37.75", "hg38": "GRCh38.100", "hg38_no_alt_TCGA_HTMCP_HPVs": "GRCh38.100"}[config["genome_name"]]
@@ -334,7 +335,7 @@ rule snpEff:
         temp("output/{sample}/1_variant/rna.isec.snps.snpEff.vcf")
     singularity: "docker://quay.io/biocontainers/snpeff:5.0--hdfd78af_1"
     params:
-        genome = genome_name,
+        genome = config["annotationPath"]["snpEff_genomeName"],
         snpEff_config = config["annotationPath"]["snpEff_config"],
         snpEff_datadir = config["annotationPath"]["snpEff_datadir"]
     log: "output/{sample}/log/snpEff.log"
@@ -650,7 +651,7 @@ rule annotatePhase:
 	output: temp("output/{sample}/3_cancer/stopVar/phase.annotate.vcf")
 	singularity: "docker://quay.io/biocontainers/snpeff:5.0--hdfd78af_1"
 	params:
-		genome = genome_name,
+		genome = config["annotationPath"]["snpEff_genomeName"],
 		snpEff_config = config["annotationPath"]["snpEff_config"],
 		snpEff_datadir = config["annotationPath"]["snpEff_datadir"]
 	log: "output/{sample}/log/annotatePhase.log"

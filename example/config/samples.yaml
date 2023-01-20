@@ -1,0 +1,14 @@
+# sample name must match the sample ID on the RPKM matrix
+samples:
+    exampleSample:
+        rna:
+            example/input/rnaReadAlignment.bam
+        phase:
+            example/input/phased.vcf.gz
+        cnv:
+            example/input/cna.txt
+        methyl:
+            example/input/methyl.bed.gz
+        tumorContent:
+            0.8
+        

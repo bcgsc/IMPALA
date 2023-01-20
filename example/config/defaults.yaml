@@ -1,0 +1,23 @@
+## genome
+genome:
+    hg19:
+        "/gsc/resources/Homo_sapiens_genomes/hg19a/genome/fasta/hg19a.fa"
+    hg38:
+        "example/ref/hg38_no_alt.fa"
+    hg38_no_alt_TCGA_HTMCP_HPVs:
+        "example/ref/hg38.fa"
+
+annotation:
+    hg19:
+        "/gsc/resources/annotation/Homo_sapiens.GRCh37.87.gtf"
+    hg38:
+        "annotation/biomart_ensembl100_GRCh38.sorted.bed"
+    hg38_no_alt_TCGA_HTMCP_HPVs:
+        "annotation/biomart_ensembl100_GRCh38.sorted.bed"
+
+centromere:
+    hg19:
+    hg38:
+        "annotation/hg38_centromere_positions.bed"
+    hg38_no_alt_TCGA_HTMCP_HPVs:
+        "annotation/hg38_centromere_positions.bed"

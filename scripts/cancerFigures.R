@@ -75,7 +75,7 @@ if ("cnv_state" %in% column) {
   ggsave(filename = paste0(out, "/expectMAF.pdf"), plot = expectMAF, units = "in")
   
   #### TEST CORRELATION PLOT ####
-  summary_table %>%
+  correlationPlot <- summary_table %>%
     dplyr::filter(cnv_state == "imbalance") %>%
     dplyr::filter(padj <= 0.05) %>%
     dplyr::filter(!is.na(cnv_state)) %>%
@@ -95,6 +95,7 @@ if ("cnv_state" %in% column) {
           panel.grid.minor = element_blank(),
           panel.border = element_blank(),
           panel.background = element_blank()) 
+    ggsave(filename = paste0(out, "/cnvMAFcorrlation.pdf"), plot = correlationPlot, units = "in")
 }
  
 

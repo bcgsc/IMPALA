@@ -664,7 +664,7 @@ rule annotatePhase:
 			-c {params.snpEff_config} \
 			-dataDir {params.snpEff_datadir} \
 			-noStats \
-			{input} > {output} 2> {log}
+			{input} > {output} #2> {log}
 
 		"""	
 

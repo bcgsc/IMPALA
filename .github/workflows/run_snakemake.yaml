@@ -1,6 +1,9 @@
 name: Test Snakemake workflow
 run-name: ${{ github.actor }} testing Snakemake workflow 🚀
 on: [push]
+defaults:
+  run:
+    shell: bash -l {0}
 jobs:
   Run-Snakemake-workflow:
     runs-on: ubuntu-latest

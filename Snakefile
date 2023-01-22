@@ -341,7 +341,7 @@ rule snpEff:
     log: "output/{sample}/log/snpEff.log"
     shell:
         """
-        snpEff -Xmx64g \
+        snpEff -Xmx16g \
             -v {params.genome} \
             -c {params.snpEff_config} \
             -dataDir {params.snpEff_datadir} \
@@ -358,9 +358,9 @@ rule snpSift:
     log: "output/{sample}/log/snpSift.log"
     shell:
         """
-        SnpSift -Xmx64g filter "( exists ANN[0].GENE )" {input} > {output.geneFilter} 2> {log}
+        SnpSift -Xmx16g filter "( exists ANN[0].GENE )" {input} > {output.geneFilter} 2> {log}
 
-        SnpSift -Xmx64g extractFields {output.geneFilter} \
+        SnpSift -Xmx16g extractFields {output.geneFilter} \
             CHROM POS GEN[0].AD ALT REF ANN[0].GENE ANN[0].BIOTYPE > {output.tsv} 2> {log}
         """
 
@@ -659,7 +659,7 @@ rule annotatePhase:
 		"""
 		mkdir -p output/{wildcards.sample}/3_cancer/stopVar
 
-		snpEff -Xmx64g \
+		snpEff -Xmx16g \
 			-v {params.genome} \
 			-c {params.snpEff_config} \
 			-dataDir {params.snpEff_datadir} \
@@ -684,7 +684,7 @@ rule snpSiftPhase:
 	log: "output/{sample}/log/snpSiftPhase.log"
 	shell:
 		"""
-		SnpSift -Xmx64g \
+		SnpSift -Xmx16g \
 			extractFields {input} \
 			ANN[0].GENE ANN[0].EFFECT GEN[0].GT FILTER > {output} 2> {log}
 		"""

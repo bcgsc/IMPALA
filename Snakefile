@@ -275,7 +275,7 @@ rule pass_filt:
         vcf="output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz"
     output:
         temp("output/{sample}/1_variant/rna.forceGT.pass.vcf.gz")
-    conda: "config/conda/ase-env.yaml"
+    #conda: "config/conda/ase-env.yaml"
     singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     log: "output/{sample}/log/pass_filt.log"
     shell:
@@ -303,7 +303,7 @@ if phased:
         		index = "output/{sample}/1_variant/rna.forceGT.pass.vcf.gz.tbi"
     		output:
         		temp("output/{sample}/1_variant/rna.isec.snps.vcf")
-    		conda: "config/conda/ase-env.yaml"
+    		#conda: "config/conda/ase-env.yaml"
     		singularity: "docker://quay.io/biocontainers/bcftools:1.15--h0ea216a_2"
     		log: "output/{sample}/log/intersect.log"
     		shell:
@@ -316,7 +316,7 @@ if phased:
 	rule intersect_gz:
 		input: "output/{sample}/1_variant/rna.isec.snps.vcf"
     		output: temp("output/{sample}/1_variant/rna.isec.snps.vcf.gz")
-    		conda: "config/conda/ase-env.yaml"
+    		#conda: "config/conda/ase-env.yaml"
     		singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     		log: "output/{sample}/log/intersect_gz.log"
     		shell: "bgzip {input} &> {log}"

@@ -286,7 +286,7 @@ rule rna_snv_index:
         vcf = "output/{sample}/1_variant/rna.forceGT.pass.vcf.gz"
     output:
         temp("output/{sample}/1_variant/rna.forceGT.pass.vcf.gz.tbi")
-    conda: "config/ase-env.yaml"
+    #conda: "config/conda/ase-env.yaml"
     singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     log: "output/{sample}/log/rna_snv_index.log"
     shell:

@@ -6,7 +6,6 @@ configfile: "config/parameters.yaml"
 
 # path to the reference genome fasta
 genome_path = config["genome"][config["genome_name"]]
-genome_name = {"hg19": "GRCh37.75", "hg38": "GRCh38.100", "hg38_no_alt_TCGA_HTMCP_HPVs": "GRCh38.100"}[config["genome_name"]]
 
 # Ensembl 100 genes
 gene_anno = config["annotation"][config["genome_name"]]

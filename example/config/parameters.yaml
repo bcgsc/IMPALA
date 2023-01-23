@@ -6,8 +6,6 @@ genome_name: "hg38"
 # RPKM matrix of the samples
 matrix:  example/input/expression_matrix.tsv
 
-# Major allele frequency threshold for ASE (0.5 - 0.75)
-maf_threshold: 0.65
 
 # Threads for STAR, RSEM, Strelka and MBASED  
 threads: 2
@@ -32,9 +30,3 @@ annotationPath:
     snpEff_javaHeap:
         "16g"
 
-# Paths for references
-# Only needed if RNA read is provided instead of RNA bam
-starReferencePath:
-    "/projects/glchang_prj/ref/star/hg38"
-rsemReferencePath:
-    "/projects/glchang_prj/ref/RSEM/hg38_no_alt"

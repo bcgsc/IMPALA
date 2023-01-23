@@ -27,8 +27,7 @@ jobs:
           wget --directory-prefix=example/ref https://snpeff.blob.core.windows.net/databases/v5_0/snpEff_v5_0_GRCh38.99.zip
           unzip example/ref/snpEff_v5_0_GRCh38.99.zip -d example/ref/
           mv example/ref/data example/ref/snpeff
-      - run: echo "Reference file downloaded to runner"
-      - name: Testin
+      - name: Run workflow
         run: | 
           snakemake -c 2 --use-singularity --configfiles example/config/defaults.yaml example/config/parameters.yaml example/config/samples.yaml 
       - name: Check output

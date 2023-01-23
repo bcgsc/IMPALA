@@ -336,7 +336,7 @@ rule snpEff:
     params:
         genome = config["annotationPath"]["snpEff_genomeName"],
         snpEff_config = config["annotationPath"]["snpEff_config"],
-        snpEff_datadir = config["annotationPath"]["snpEff_datadir"]
+        snpEff_datadir = config["annotationPath"]["snpEff_datadir"],
 	heapSize = config["annotationPath"]["snpEff_javaHeap"]
     log: "output/{sample}/log/snpEff.log"
     shell:
@@ -354,9 +354,8 @@ rule snpSift:
     output:
         geneFilter = "output/{sample}/1_variant/rna.isec.filterSnps.vcf",
         tsv = "output/{sample}/1_variant/rna.isec.filterSnps.tsv"
+    params: heapSize = config["annotationPath"]["snpEff_javaHeap"]
     singularity: "docker://quay.io/biocontainers/snpsift:5.1d--hdfd78af_0"
-    params: 
-	heapSize = config["annotationPath"]["snpEff_javaHeap"]
     log: "output/{sample}/log/snpSift.log"
     shell:
         """
@@ -655,7 +654,7 @@ rule annotatePhase:
 	params:
 		genome = config["annotationPath"]["snpEff_genomeName"],
 		snpEff_config = config["annotationPath"]["snpEff_config"],
-		snpEff_datadir = config["annotationPath"]["snpEff_datadir"]
+		snpEff_datadir = config["annotationPath"]["snpEff_datadir"],
 		heapSize = config["annotationPath"]["snpEff_javaHeap"]
 	log: "output/{sample}/log/annotatePhase.log"
 	shell:

@@ -29,6 +29,8 @@ annotationPath:
         "$(pwd)/example/ref/snpeff/"
     snpEff_genomeName:
         "GRCh38.99"
+    snpEff_javaHeap:
+        "16g"
 
 # Paths for references
 # Only needed if RNA read is provided instead of RNA bam

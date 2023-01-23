@@ -338,10 +338,11 @@ rule snpEff:
         genome = config["annotationPath"]["snpEff_genomeName"],
         snpEff_config = config["annotationPath"]["snpEff_config"],
         snpEff_datadir = config["annotationPath"]["snpEff_datadir"]
+	heapSize = config["annotationPath"]["snpEff_javaHeap"]
     log: "output/{sample}/log/snpEff.log"
     shell:
         """
-        snpEff -Xmx16g \
+        snpEff -Xmx{params.heapSize} \
             -v {params.genome} \
             -c {params.snpEff_config} \
             -dataDir {params.snpEff_datadir} \
@@ -355,12 +356,14 @@ rule snpSift:
         geneFilter = "output/{sample}/1_variant/rna.isec.filterSnps.vcf",
         tsv = "output/{sample}/1_variant/rna.isec.filterSnps.tsv"
     singularity: "docker://quay.io/biocontainers/snpsift:5.1d--hdfd78af_0"
+    params: 
+	heapSize = config["annotationPath"]["snpEff_javaHeap"]
     log: "output/{sample}/log/snpSift.log"
     shell:
         """
-        SnpSift -Xmx16g filter "( exists ANN[0].GENE )" {input} > {output.geneFilter} 2> {log}
+        SnpSift -Xmx{params.heapSize} filter "( exists ANN[0].GENE )" {input} > {output.geneFilter} 2> {log}
 
-        SnpSift -Xmx16g extractFields {output.geneFilter} \
+        SnpSift -Xmx{params.heapSize} extractFields {output.geneFilter} \
             CHROM POS GEN[0].AD ALT REF ANN[0].GENE ANN[0].BIOTYPE > {output.tsv} 2> {log}
         """
 
@@ -654,12 +657,13 @@ rule annotatePhase:
 		genome = config["annotationPath"]["snpEff_genomeName"],
 		snpEff_config = config["annotationPath"]["snpEff_config"],
 		snpEff_datadir = config["annotationPath"]["snpEff_datadir"]
+		heapSize = config["annotationPath"]["snpEff_javaHeap"]
 	log: "output/{sample}/log/annotatePhase.log"
 	shell:
 		"""
 		mkdir -p output/{wildcards.sample}/3_cancer/stopVar
 
-		snpEff -Xmx16g \
+		snpEff -Xmx{params.heapSize} \
 			-v {params.genome} \
 			-c {params.snpEff_config} \
 			-dataDir {params.snpEff_datadir} \
@@ -681,10 +685,12 @@ rule snpSiftPhase:
 	input: "output/{sample}/3_cancer/stopVar/phase.oneline.annotate.vcf"
 	output: "output/{sample}/3_cancer/stopVar/phase.annotate.tsv"
 	singularity: "docker://quay.io/biocontainers/snpsift:5.1d--hdfd78af_0"
+	params:
+		heapSize = config["annotationPath"]["snpEff_javaHeap"]
 	log: "output/{sample}/log/snpSiftPhase.log"
 	shell:
 		"""
-		SnpSift -Xmx16g \
+		SnpSift -Xmx{params.heapSize} \
 			extractFields {input} \
 			ANN[0].GENE ANN[0].EFFECT GEN[0].GT FILTER > {output} 2> {log}
 		"""

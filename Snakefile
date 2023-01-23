@@ -385,7 +385,7 @@ if phased:
 					--threads={threads} \
 					--phase={input.phase} \
 					--rna={input.tsv} \
-					--outdir=output/{wildcards.sample}/2_mBASED #&> {log}
+					--outdir=output/{wildcards.sample}/2_mBASED &> {log}
 			"""
 else:
 	rule mbased:

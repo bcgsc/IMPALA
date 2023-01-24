@@ -1,6 +1,6 @@
 
 # Allele specific expression
-![example workflow](https://github.com/github/bcgsc/IMPALA/actions/workflows/run_snakemake.yaml/badge.svg)
+[![example workflow](https://github.com/bcgsc/IMPALA/actions/workflows/run_snakemake.yaml/badge.svg)](https://github.com/bcgsc/IMPALA/actions/workflows/run_snakemake.yaml)
 
 This workflow outputs the allele-specific expression using short-read RNA-seq. The phasing information of the variants from tools such as WhatsApp can be provided to increase the performance of the tool. Copy number variant data and allelic methylation data can also be provided to analyze genes with allele specific expression.
 

@@ -1,8 +1,8 @@
 
-# Integrated Mapping and Profiling of Allelically-expressed Loci with Annotations (Impala)
+# Integrated Mapping and Profiling of Allelically-expressed Loci with Annotations 
 [![example workflow](https://github.com/bcgsc/IMPALA/actions/workflows/run_snakemake.yaml/badge.svg)](https://github.com/bcgsc/IMPALA/actions/workflows/run_snakemake.yaml)
 
-<img align="right" width="240" height="240" src="example_figures/impala_logo.png">
+<img align="right" width="360" height="360" src="example_figures/impala_logo.png">
 
 This workflow outputs the allele-specific expression using short-read RNA-seq. The phasing information of the variants from tools such as WhatsApp can be provided to increase the performance of the tool. Copy number variant data and allelic methylation data can also be provided to analyze genes with allele specific expression.
 

@@ -4,7 +4,7 @@
 
 <img align="right" width="360" height="360" src="example_figures/impala_logo.png">
 
-This workflow outputs the allele-specific expression using short-read RNA-seq. The phasing information of the variants from tools such as WhatsApp can be provided to increase the performance of the tool. Copy number variant data and allelic methylation data can also be provided to analyze genes with allele specific expression.
+This workflow outputs allele-specific expression using short-read RNA-seq. Phasing information derived from long-read data by tools such as WhatsHap can be provided to increase the performance of the tool, and to link results to features of interest. Copy number variant data and allelic methylation data can also be provided to analyze genes with allele specific expression.
 
 # Install
 Clone the repository:

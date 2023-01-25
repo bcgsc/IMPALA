@@ -1,0 +1,32 @@
+### Genome version considerations
+
+# genome_name should match bams
+genome_name: "hg38"
+
+# RPKM matrix of the samples
+matrix:  example/input/expression_matrix.tsv
+
+
+# Threads for STAR, RSEM, Strelka and MBASED  
+threads: 2
+
+# Use phased vcf (True or False)
+# Uses pseudphasing algorithm if False
+phased: True
+
+# Perform cancer analysis
+# Need to include CNV data (from ploidetect) and allelic methyation (from NanoMethPhased)
+cancer_analysis: True
+
+
+# Paths for annotation
+annotationPath:
+    snpEff_config:
+        "/usr/local/share/snpeff-5.0-1/snpEff.config"
+    snpEff_datadir:
+        "$(pwd)/example/ref/snpeff/"
+    snpEff_genomeName:
+        "GRCh38.99"
+    snpEff_javaHeap:
+        "16g"
+

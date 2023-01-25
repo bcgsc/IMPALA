@@ -1,10 +1,6 @@
 # sample name must match the sample ID on the RPKM matrix
 samples:
-    exampleInputAlignment:
-        R1: 
-            
-        R2:
-            
+    exampleSample:
         rna:
             /path/to/RNA/alignment.bam
         phase:
@@ -13,16 +9,3 @@ samples:
             /path/to/cnv/data # Does not need to be included if cancer_analysis = False
         methyl:
             /path/to/methyl/data.bed # Does not need to be included if cancer_analysis = False
-    exampleInputRead:
-        R1: 
-            /path/to/RNA/short/read/R1_file.fa
-        R2:
-            /path/to/RNA/short/read/R2_file.fa
-        rna:
-            
-        phase:
-            /path/to/phase.vcf 
-        cnv:
-            /path/to/cnv/data
-        methyl:
-            /path/to/methyl/data.bed

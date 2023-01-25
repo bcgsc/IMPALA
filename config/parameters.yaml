@@ -27,6 +27,10 @@ annotationPath:
         "/gsc/resources/annotation/snpeff/snpEff.config"
     snpEff_datadir:
         "/gsc/resources/annotation/snpeff/snpeff_binaries/5.0/data/"
+    snpEff_genomeName:
+        "GRCh38.100"
+    snpEff_javaHeap:
+        "64g"
 
 # Paths for references
 # Only needed if RNA read is provided instead of RNA bam

@@ -1,0 +1,38 @@
+name: Test Snakemake workflow
+run-name: ${{ github.actor }} testing Snakemake workflow 🚀
+on:
+  pull_request:
+    types: [opened, reopened]
+defaults:
+  run:
+    shell: bash -l {0}
+jobs:
+  Run-Snakemake-workflow:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event. "
+      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
+      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
+      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
+      - name: Install Conda environment from environment.yml
+        uses: mamba-org/provision-with-micromamba@main 
+        with:
+          environment-file: .github/environment.yml
+      - name: Downlaod hg38 ref file
+        run: |
+          wget --directory-prefix=example/ref/ https://www.bcgsc.ca/downloads/genomes/9606/hg38_no_alt/bwa_0.7.6a_ind/genome/hg38_no_alt.fa 
+      - name: Download snpEff
+        run: |
+          wget --directory-prefix=example/ref https://snpeff.blob.core.windows.net/databases/v5_0/snpEff_v5_0_GRCh38.99.zip
+          unzip example/ref/snpEff_v5_0_GRCh38.99.zip -d example/ref/
+          mv example/ref/data example/ref/snpeff
+      - name: Run workflow
+        run: | 
+          snakemake -c 1 --use-singularity --configfiles example/config/defaults.yaml example/config/parameters.yaml example/config/samples.yaml 
+      - name: Check output
+        run: |
+          ls -lt output/exampleSample/
+      - run: echo "🍏 This job's status is ${{ job.status }}."

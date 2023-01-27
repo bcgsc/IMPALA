@@ -51,6 +51,7 @@ rule all:
 
 rule params:
 	output: "output/{sample}/params.txt"
+	log: "output/{sample}/log/params.log"
 	params: 
 		sample_info = lambda w: config["samples"][w.sample],
 		genome_name = config["genome_name"],
@@ -86,7 +87,7 @@ if phased:
 		output: 
 			"output/{sample}/0_alignment/starAligned.sortedByCoord.out.bam",
 			"output/{sample}/0_alignment/starAligned.toTranscriptome.out.bam"
-		singularity: "docker://quay.io/biocontainers/star:2.7.10a--h9ee0642_0"
+		container: "docker://quay.io/biocontainers/star:2.7.10a--h9ee0642_0"
 		threads: config["threads"]
 		params: 
 			ref = config["starReferencePath"]
@@ -112,7 +113,7 @@ if phased:
 	rule waspFilter:
 		input: "output/{sample}/0_alignment/starAligned.sortedByCoord.out.bam"
 		output: "output/{sample}/0_alignment/starAligned.waspFilter.bam"
-		singularity: "docker://quay.io/biocontainers/samtools:1.16.1--h6899075_1"
+		container: "docker://quay.io/biocontainers/samtools:1.16.1--h6899075_1"
 		log: "output/{sample}/log/waspFilter.log"
 		shell:
 			"""
@@ -129,7 +130,7 @@ else:
 		output: 
 			"output/{sample}/0_alignment/starAligned.sortedByCoord.out.bam",
 			"output/{sample}/0_alignment/starAligned.toTranscriptome.out.bam"
-		singularity: "docker://quay.io/biocontainers/star:2.7.10a--h9ee0642_0"
+		container: "docker://quay.io/biocontainers/star:2.7.10a--h9ee0642_0"
 		threads: config["threads"]
 		params: 
 			ref = config["starReferencePath"]
@@ -156,7 +157,7 @@ rule rsem:
 	output: "output/{sample}/0_alignment/star.genes.results"
 	params:
 			ref=config["rsemReferencePath"]
-	singularity: "docker://quay.io/biocontainers/rsem:1.3.3--pl5321hecb563c_4"
+	container: "docker://quay.io/biocontainers/rsem:1.3.3--pl5321hecb563c_4"
 	threads: config["threads"]
 	log: "output/{sample}/log/rsem.log"
 	shell:
@@ -175,7 +176,7 @@ rule rsemExpressionMatrix:
 	output: "output/{sample}/0_alignment/expression_matrix.tsv"
 	params:
 		annotation = "annotation/biomart_ensembl100_GRCh38.sorted.bed"
-	singularity: "docker://glenn032787/ase_rcontainer:2.0"
+	container: "docker://glenn032787/ase_rcontainer:2.0"
 	log: "output/{sample}/log/rsemExpressionMatrix.log"
 	shell:
 		"""
@@ -194,7 +195,7 @@ rule phase_vcf_filter:
         phase = lambda w: config["samples"][w.sample]["phase"]
     output:
         "output/{sample}/1_variant/phase.het.pass.snps.vcf.gz"
-    singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
+    container: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     log: "output/{sample}/log/phase_vcf_filter.log"
     shell:
         """
@@ -209,7 +210,7 @@ rule phase_vcf_index:
     output:
         "output/{sample}/1_variant/phase.het.pass.snps.vcf.gz.tbi"
     log: "output/{sample}/log/phase_vcf_index.log"
-    singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
+    container: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     shell:
         "tabix {input.vcf} &> {log}"
 
@@ -233,8 +234,7 @@ if phased:
 			index = "output/{sample}/1_variant/phase.het.pass.snps.vcf.gz.tbi"
 		output:
 			temp("output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz")
-		conda: "config/conda/strelka.yaml"
-		singularity: "docker://quay.io/biocontainers/strelka:2.9.10--h9ee0642_1"
+		container: "docker://quay.io/biocontainers/strelka:2.9.10--h9ee0642_1"
 		log: "output/{sample}/log/rna_snv_calling.log"
 		threads: config["threads"]
 		shell:
@@ -255,8 +255,7 @@ else:
                 ref = genome_path,
         output:
                 temp("output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz")
-        conda: "config/conda/strelka.yaml"
-        singularity: "docker://quay.io/biocontainers/strelka:2.9.10--h9ee0642_1"
+        container: "docker://quay.io/biocontainers/strelka:2.9.10--h9ee0642_1"
         log: "output/{sample}/log/rna_snv_calling.log"
         threads: config["threads"]
         shell:
@@ -274,8 +273,7 @@ rule pass_filt:
         vcf="output/{sample}/StrelkaRNA/results/variants/genome.S1.vcf.gz"
     output:
         temp("output/{sample}/1_variant/rna.forceGT.pass.vcf.gz")
-    conda: "config/conda/ase-env.yaml"
-    singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
+    container: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     log: "output/{sample}/log/pass_filt.log"
     shell:
         "zcat {input.vcf} | grep -E '(PASS|#)' | bgzip > {output} 2> {log} && rm -rf output/{wildcards.sample}/StrelkaRNA/"
@@ -285,8 +283,7 @@ rule rna_snv_index:
         vcf = "output/{sample}/1_variant/rna.forceGT.pass.vcf.gz"
     output:
         temp("output/{sample}/1_variant/rna.forceGT.pass.vcf.gz.tbi")
-    conda: "config/conda/ase-env.yaml"
-    singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
+    container: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     log: "output/{sample}/log/rna_snv_index.log"
     shell:
         "tabix {input.vcf} &> {log}"
@@ -302,8 +299,7 @@ if phased:
         		index = "output/{sample}/1_variant/rna.forceGT.pass.vcf.gz.tbi"
     		output:
         		temp("output/{sample}/1_variant/rna.isec.snps.vcf")
-    		conda: "config/conda/ase-env.yaml"
-    		singularity: "docker://quay.io/biocontainers/bcftools:1.15--h0ea216a_2"
+    		container: "docker://quay.io/biocontainers/bcftools:1.15--h0ea216a_2"
     		log: "output/{sample}/log/intersect.log"
     		shell:
         		"""
@@ -315,8 +311,7 @@ if phased:
 	rule intersect_gz:
 		input: "output/{sample}/1_variant/rna.isec.snps.vcf"
     		output: temp("output/{sample}/1_variant/rna.isec.snps.vcf.gz")
-    		conda: "config/conda/ase-env.yaml"
-    		singularity: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
+    		container: "docker://quay.io/biocontainers/htslib:1.15--h9753748_0"
     		log: "output/{sample}/log/intersect_gz.log"
     		shell: "bgzip {input} &> {log}"
 	vcf = "output/{sample}/1_variant/rna.isec.snps.vcf.gz"
@@ -332,7 +327,7 @@ rule snpEff:
     input: vcf
     output:
         temp("output/{sample}/1_variant/rna.isec.snps.snpEff.vcf")
-    singularity: "docker://quay.io/biocontainers/snpeff:5.0--hdfd78af_1"
+    container: "docker://quay.io/biocontainers/snpeff:5.0--hdfd78af_1"
     params:
         genome = config["annotationPath"]["snpEff_genomeName"],
         snpEff_config = config["annotationPath"]["snpEff_config"],
@@ -355,7 +350,7 @@ rule snpSift:
         geneFilter = "output/{sample}/1_variant/rna.isec.filterSnps.vcf",
         tsv = "output/{sample}/1_variant/rna.isec.filterSnps.tsv"
     params: heapSize = config["annotationPath"]["snpEff_javaHeap"]
-    singularity: "docker://quay.io/biocontainers/snpsift:5.1d--hdfd78af_0"
+    container: "docker://quay.io/biocontainers/snpsift:5.1d--hdfd78af_0"
     log: "output/{sample}/log/snpSift.log"
     shell:
         """
@@ -378,7 +373,7 @@ if phased:
         		"output/{sample}/2_mBASED/MBASEDresults.rds"
     		threads: config["threads"]
     		log: "output/{sample}/log/mbased.log"
-		singularity: "docker://glenn032787/ase_rcontainer:2.0"
+		container: "docker://glenn032787/ase_rcontainer:2.0"
     		shell:
         		"""
 				Rscript scripts/mbased.snpEff.R \
@@ -394,7 +389,7 @@ else:
 			output:
 				"output/{sample}/2_mBASED/MBASEDresults.rds"
 			threads: config["threads"]
-			singularity: "docker://glenn032787/ase_rcontainer:2.0"
+			container: "docker://glenn032787/ase_rcontainer:2.0"
 			log: "output/{sample}/log/mbased.log"
 			shell:
 				"""
@@ -414,7 +409,7 @@ rule addExpression:
 		rds = "output/{sample}/2_mBASED/MBASEDresults.rds",
 		rpkm = getExpressionMatrix
 	output: "output/{sample}/2_mBASED/MBASED_expr_gene_results.txt"
-	singularity: "docker://glenn032787/ase_rcontainer:2.0"
+	container: "docker://glenn032787/ase_rcontainer:2.0"
 	params:
 		maf = config["maf_threshold"]
 	log: "output/{sample}/log/addExpression.log"
@@ -436,7 +431,7 @@ rule figures:
 		rpkm = getExpressionMatrix
 	output:
 		"output/{sample}/figures/sankeyPlot.html"
-	singularity: "docker://glenn032787/ase_rcontainer:2.0"
+	container: "docker://glenn032787/ase_rcontainer:2.0"
 	params:
 		maf = config["maf_threshold"]
 	log: "output/{sample}/log/figures.log"
@@ -493,7 +488,7 @@ rule promoterFlank:
 		gene = "output/{sample}/3_cancer/raw/gene_annotation.bed",
 		length = "output/{sample}/3_cancer/raw/genome.length"
 	output: "output/{sample}/3_cancer/raw/promoter_annotation.bed"
-	singularity: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
+	container: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
 	log: "output/{sample}/log/promoterFlank.log"
 	shell:
 		"""
@@ -511,7 +506,7 @@ rule cnv_preprocess:
 	output: "output/{sample}/3_cancer/raw/cnv.bed"
 	params: 
 		tumor = getTumorContent
-	singularity: "docker://glenn032787/ase_rcontainer:2.0"
+	container: "docker://glenn032787/ase_rcontainer:2.0"
 	log: "output/{sample}/log/cnv_preprocess.log"
 	shell:
 		"""
@@ -526,7 +521,7 @@ rule cnvIntersect:
 		cnv = "output/{sample}/3_cancer/raw/cnv.bed",
 		gene = "output/{sample}/3_cancer/raw/gene_annotation.bed"
 	output: "output/{sample}/3_cancer/intersect/cnv_intersect.bed"
-	singularity: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
+	container: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
 	log: "output/{sample}/log/cnvIntersect.log"
 	shell:
 		"""
@@ -542,7 +537,7 @@ rule cnvIntersect:
 rule dmr_preprocess:
         input: lambda w: config["samples"][w.sample]["methyl"]
         output: "output/{sample}/3_cancer/raw/methyl.bed"
-        singularity: "docker://glenn032787/ase_rcontainer:2.0"
+        container: "docker://glenn032787/ase_rcontainer:2.0"
         log: "output/{sample}/log/dmr_preprocess.log"
         shell:
                 """
@@ -557,7 +552,7 @@ rule methylIntersect:
 		methyl = "output/{sample}/3_cancer/raw/methyl.bed",
 		gene = "output/{sample}/3_cancer/raw/gene_annotation.bed"
 	output: "output/{sample}/3_cancer/intersect/methyl_intersect.bed"
-	singularity: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
+	container: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
 	log: "output/{sample}/log/methylIntersect.log"
 	shell:
 		"""
@@ -590,7 +585,7 @@ rule createNormalPromoter:
 		temp("output/{sample}/3_cancer/tfbs/ref.promoter.fa")
 	params:
 		ref = genome_path
-	singularity: "docker://quay.io/biocontainers/samtools:1.16.1--h6899075_1"
+	container: "docker://quay.io/biocontainers/samtools:1.16.1--h6899075_1"
 	log: "output/{sample}/log/createNormalPromoter.log"
 	shell:
 		"samtools faidx -r {input} {params.ref} > {output} 2> {log}"
@@ -601,7 +596,7 @@ rule mutatePromoter:
 		id = "output/{sample}/3_cancer/tfbs/id.txt",
 		phase_vcf = lambda w: config["samples"][w.sample]["phase"]
 	output: temp("output/{sample}/3_cancer/tfbs/allele{num}_promoter.fa")
-	singularity: "docker://quay.io/biocontainers/bcftools:1.15--h0ea216a_2"
+	container: "docker://quay.io/biocontainers/bcftools:1.15--h0ea216a_2"
 	log: "output/{sample}/log/mutatePromoter_{num}.log"
 	shell:
 		"""
@@ -613,7 +608,7 @@ rule scanMotif:
 	output: "output/{sample}/3_cancer/tfbs/allele{num}_motif.txt"
 	params:
 		motifFile="annotation/HOCOMOCOv11_core_HUMAN_mono_meme_format.meme"
-	singularity: "docker://quay.io/biocontainers/meme:5.4.1--py310pl5321hb021246_2"
+	container: "docker://quay.io/biocontainers/meme:5.4.1--py310pl5321hb021246_2"
 	log: "output/{sample}/log/scanMotif_{num}.log"
 	shell:
 		"""
@@ -626,7 +621,7 @@ rule compareTFBS:
 		expression_matrix = getExpressionMatrix,
 		id2gene = "output/{sample}/3_cancer/tfbs/id2gene.txt"
 	output: "output/{sample}/3_cancer/tfbs/motifDiff.tsv"
-	singularity: "docker://glenn032787/ase_rcontainer:2.0"
+	container: "docker://glenn032787/ase_rcontainer:2.0"
 	params: 
 		tf_list = "annotation/human_mono_motifs.tsv"
 	log: "output/{sample}/log/compareTFBS.log"
@@ -650,7 +645,7 @@ rule compareTFBS:
 rule annotatePhase:
 	input: lambda w: config["samples"][w.sample]["phase"]
 	output: temp("output/{sample}/3_cancer/stopVar/phase.annotate.vcf")
-	singularity: "docker://quay.io/biocontainers/snpeff:5.0--hdfd78af_1"
+	container: "docker://quay.io/biocontainers/snpeff:5.0--hdfd78af_1"
 	params:
 		genome = config["annotationPath"]["snpEff_genomeName"],
 		snpEff_config = config["annotationPath"]["snpEff_config"],
@@ -682,7 +677,7 @@ rule oneLine:
 rule snpSiftPhase:
 	input: "output/{sample}/3_cancer/stopVar/phase.oneline.annotate.vcf"
 	output: "output/{sample}/3_cancer/stopVar/phase.annotate.tsv"
-	singularity: "docker://quay.io/biocontainers/snpsift:5.1d--hdfd78af_0"
+	container: "docker://quay.io/biocontainers/snpsift:5.1d--hdfd78af_0"
 	params:
 		heapSize = config["annotationPath"]["snpEff_javaHeap"]
 	log: "output/{sample}/log/snpSiftPhase.log"
@@ -696,7 +691,7 @@ rule snpSiftPhase:
 rule getStopMutation:
 	input: "output/{sample}/3_cancer/stopVar/phase.annotate.tsv"
 	output: "output/{sample}/3_cancer/stopVar/stop_variant.tsv"
-	singularity: "docker://glenn032787/ase_rcontainer:2.0"
+	container: "docker://glenn032787/ase_rcontainer:2.0"
 	log: "output/{sample}/log/getStopMutation.log"
 	shell:
 		"""
@@ -715,7 +710,7 @@ rule getGeneSlop:
 		gene = "output/{sample}/3_cancer/raw/gene_annotation.bed",
 		length = "output/{sample}/3_cancer/raw/genome.length"
 	output: "output/{sample}/3_cancer/somatic/geneSlop.bed"
-	singularity: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
+	container: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
 	log: "output/{sample}/log/getGeneSlop.log"
 	shell:
 		"""
@@ -729,7 +724,7 @@ rule somaticIntersect:
 		genes = "output/{sample}/3_cancer/somatic/geneSlop.bed",
 		variants = lambda w: config["samples"][w.sample][w.variant]
 	output: "output/{sample}/3_cancer/somatic/{variant}.bed"
-	singularity: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
+	container: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
 	log: "output/{sample}/log/somatic_{variant}_intersect.log"
 	shell:
 		"""
@@ -802,7 +797,7 @@ rule summaryTableCancer:
 		indel = checkSomaticIndel,
 		ase = "output/{sample}/2_mBASED/MBASED_expr_gene_results.txt" 
 	output: "output/{sample}/summaryTable.tsv"
-	singularity: "docker://glenn032787/ase_rcontainer:2.0"
+	container: "docker://glenn032787/ase_rcontainer:2.0"
 	params:
 		cancer=checkCancerAnalysis,
 		normal="annotation/phaserNormalASE.tsv",
@@ -833,7 +828,7 @@ rule summaryTableCancer:
 rule cancerFigures:
 	input: "output/{sample}/summaryTable.tsv"
 	output: "output/{sample}/figures/aseCause.pdf"
-	singularity: "docker://glenn032787/ase_rcontainer:2.0"
+	container: "docker://glenn032787/ase_rcontainer:2.0"
 	log: "output/{sample}/log/cancerFigures.log" 
 	shell:
 		"""
@@ -871,7 +866,8 @@ rule karyogram:
 		annotation = "annotation/biomart_ensembl100_GRCh38.sorted.bed"	
 	output:
 		"output/{sample}/figures/karyogram.pdf"
-	singularity: "docker://glenn032787/ase_rcontainer:2.0"
+	container: "docker://glenn032787/ase_rcontainer:2.0"
+	log: log: "output/{sample}/log/karyogram.log"
 	shell:
 		"""
 		Rscript scripts/karyogramFigure.R \
@@ -881,7 +877,7 @@ rule karyogram:
         		--dmr={input.dmr} \
         		--ase={input.ase} \
         		--genes={input.annotation} \
-        		--out=output/{wildcards.sample}/figures/karyogram
+        		--out=output/{wildcards.sample}/figures/karyogram &> {log}
 		"""
 	
 

@@ -1,3 +1,4 @@
+# Load utility file
 include: "src/utility.smk"
 
 ## Load config values
@@ -220,12 +221,6 @@ rule phase_vcf_index:
 ### Call and filter the RNA SNVs
 ### -------------------------------------------------------------------
 
-def getAlignment(wildcards):
-	if "rna" not in config["samples"][wildcards.sample] or config["samples"][wildcards.sample]["rna"] == None:
-		return alignmentFile
-	return config["samples"][wildcards.sample]["rna"]
-
-
 if phased:
 	rule rna_snv_calling:
 		input:
@@ -401,10 +396,6 @@ else:
 						--outdir=output/{wildcards.sample}/2_mBASED &> {log}
 				"""
 
-def getExpressionMatrix(wildcards):
-	if "rna" not in config["samples"][wildcards.sample] or  config["samples"][wildcards.sample]["rna"] == None:
-		return "output/{sample}/0_alignment/expression_matrix.tsv"
-	return rpkm_path
 
 rule addExpression:
 	input:
@@ -497,11 +488,6 @@ rule promoterFlank:
 		bedtools flank -l 2000 -r 500 -i {input.gene} -g {input.length} > {output} 2> {log}
 		"""
 
-def getTumorContent(wildcards):
-	if "tumorContent" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["tumorContent"] != None:
- 		return config["samples"][wildcards.sample]["tumorContent"]
-	else:
-		return 1.0
 
 rule cnv_preprocess:
 	input:  lambda w: config["samples"][w.sample]["cnv"]
@@ -738,57 +724,6 @@ rule somaticIntersect:
 ### Cancer analysis - Summary Table
 ### -------------------------------------------------------------------
 
-# Functions to check input
-
-def checkCNV(wildcards):
-	if config['cancer_analysis'] and "cnv" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["cnv"] != None:
-		return "output/{sample}/3_cancer/intersect/cnv_intersect.bed"
-	else:
-		return []
-
-def checkMethyl(wildcards):
-	if config['cancer_analysis'] and "methyl" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["methyl"] != None:
-		return "output/{sample}/3_cancer/intersect/methyl_intersect.bed"
-	else:
-		return []
-
-def checkTFBS(wildcards):
-	if config['cancer_analysis'] and "phase" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["phase"] != None:
-		return "output/{sample}/3_cancer/tfbs/motifDiff.tsv"
-	else:
-		return []
-
-def checkStopVar(wildcards): 
-	if config['cancer_analysis'] and "phase" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["phase"] != None:
-		return "output/{sample}/3_cancer/stopVar/stop_variant.tsv"
-	else:
-		return []
-
-def checkSomaticSnv(wildcards):
-	if config['cancer_analysis'] and "somatic_snv" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["somatic_snv"] != None:
-		return "output/{sample}/3_cancer/somatic/somatic_snv.bed"
-	else:
-		return []	
-
-def checkSomaticIndel(wildcards):
-	if config['cancer_analysis'] and "somatic_indel" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["somatic_indel"] != None:
-		return "output/{sample}/3_cancer/somatic/somatic_indel.bed"
-	else:
-		return []
-
-def checkCancerAnalysis(wildcards):
-	if config['cancer_analysis']:
-		return "annotation/cancer_gene.txt"
-	else: 
-		return []
-
-def checkTissue(wildcards):
-	if config['cancer_analysis'] and "tissue" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["tissue"] != None and config["samples"][wildcards.sample]["tissue"] in possibleTissue:
-		return config["samples"][wildcards.sample]["tissue"]
-	else:
-		return []
-	
-
 rule summaryTableCancer:
 	input:
 		cnv = checkCNV,
@@ -845,19 +780,6 @@ rule cancerFigures:
 ### -------------------------------------------------------------------
 ### Karyogram Figure
 ### -------------------------------------------------------------------
-
-def checkCNV_karyogram(wildcards):
-	if config['cancer_analysis'] and "cnv" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["cnv"] != None:
-		return config["samples"][wildcards.sample]["cnv"]
-	else:
-		return []
-
-def checkMethyl(wildcards):
-	if config['cancer_analysis'] and "methyl" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["methyl"] != None:
-		return config["samples"][wildcards.sample]["methyl"]
-	else:
-		return []
-
 rule karyogram:
 	input:
 		cnv = checkCNV_karyogram,

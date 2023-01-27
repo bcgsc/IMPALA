@@ -1,3 +1,5 @@
+include: "src/utility.smk"
+
 ## Load config values
 configfile: "config/defaults.yaml"
 configfile: "config/samples.yaml"

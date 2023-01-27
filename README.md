@@ -1,6 +1,8 @@
 
 # Integrated Mapping and Profiling of Allelically-expressed Loci with Annotations 
 [![example workflow](https://github.com/bcgsc/IMPALA/actions/workflows/run_snakemake.yaml/badge.svg)](https://github.com/bcgsc/IMPALA/actions/workflows/run_snakemake.yaml)
+[![Snakemake](https://img.shields.io/badge/snakemake-≥5.6.0-brightgreen.svg?style=flat)](https://snakemake.readthedocs.io)
+
 
 <img align="right" width="360" height="360" src="example_figures/impala_logo.png">
 
@@ -154,3 +156,18 @@ The `chromPlot.pdf` figure shows the distribution of ASE genes by their genomic 
 The `sankeyPlot.html` shows how many of genes made it through each filtering step. All genes included only the genes labeled as protein coding, lincRNA, or miRNA.  They were filtered by (1) expression level, (2) ablity to be phased, and (3) whether or not they have ASE.
 
 ![](example_figures/sankeyPlot.png "ASE Sankey Plot")
+
+## Contributors
+The contributors of this project are
+Glenn Chang, Vannessa Porter, and Kieran O'Neill.
+
+<a href="https://github.com/bcgsc/IMPALA/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=bcgsc/IMPALA&max=1000" />
+</a>
+
+## License
+
+`IMPALA` is licensed under the terms of the [GNU GPL v3](LICENSE).
+
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+

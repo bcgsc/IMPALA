@@ -1,4 +1,4 @@
-name: Test Snakemake workflow
+name: Build
 run-name: ${{ github.actor }} testing Snakemake workflow 🚀
 on:
   pull_request:

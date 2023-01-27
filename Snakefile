@@ -62,16 +62,16 @@ rule params:
 		threads = config["threads"]
 	shell:
 		"""
-		date >> {output}
-		printf "{wildcards.sample}\n------------------------\n\n" >> {output}
-		echo {params.sample_info}| sed 's/{{//' | sed 's/}}//' | tr  , '\n'  >> {output}
-		echo expression_matrix: {params.expressionMatrix} >> {output}
-		printf "\n------------------------\n" >> {output}
-		echo Major Allele Frequency Threshold: {params.maf} >> {output}
-		echo Genome: {params.genome_name} >> {output}
-		echo Phased: {params.phase}  >> {output}
-		echo Cancer analysis: {params.cancer} >> {output}	
-		echo Threads: {params.threads} >> {output}
+		date >> {output} 2> {log}
+		printf "{wildcards.sample}\n------------------------\n\n" >> {output} 2> {log}
+		echo {params.sample_info}| sed 's/{{//' | sed 's/}}//' | tr  , '\n'  >> {output} 2> {log}
+		echo expression_matrix: {params.expressionMatrix} >> {output} 2> {log}
+		printf "\n------------------------\n" >> {output} 2> {log}
+		echo Major Allele Frequency Threshold: {params.maf} >> {output} 2> {log}
+		echo Genome: {params.genome_name} >> {output} 2> {log}
+		echo Phased: {params.phase}  >> {output} 2> {log}
+		echo Cancer analysis: {params.cancer} >> {output} 2> {log}
+		echo Threads: {params.threads} >> {output} 2> {log}
 		"""
 
 ### -------------------------------------------------------------------
@@ -867,7 +867,7 @@ rule karyogram:
 	output:
 		"output/{sample}/figures/karyogram.pdf"
 	container: "docker://glenn032787/ase_rcontainer:2.0"
-	log: log: "output/{sample}/log/karyogram.log"
+	log: "output/{sample}/log/karyogram.log"
 	shell:
 		"""
 		Rscript scripts/karyogramFigure.R \

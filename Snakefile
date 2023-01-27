@@ -466,7 +466,7 @@ rule annotateGenes:
 
 
 rule genomeLength:
-	input: genome_path + ".fai"
+	input: f"{genome_path}.fai"
 	output: temp("output/{sample}/3_cancer/raw/genome.length")
 	log: "output/{sample}/log/genomeLength.log"
 	shell:

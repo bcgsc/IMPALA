@@ -354,7 +354,7 @@ rule snpSift:
         SnpSift -Xmx{params.heapSize} filter "( exists ANN[0].GENE )" {input} > {output.geneFilter} 2> {log}
 
         SnpSift -Xmx{params.heapSize} extractFields {output.geneFilter} \
-            CHROM POS GEN[0].AD ALT REF ANN[0].GENE ANN[0].BIOTYPE > {output.tsv} 2> {log}
+            CHROM POS GEN[0].AD REF ALT ANN[0].GENE ANN[0].BIOTYPE > {output.tsv} 2> {log}
         """
 
 ### -------------------------------------------------------------------

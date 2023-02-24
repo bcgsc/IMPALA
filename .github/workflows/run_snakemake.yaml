@@ -23,15 +23,15 @@ jobs:
           environment-file: .github/environment.yml
       - name: Downlaod hg38 ref file
         run: |
-          wget --directory-prefix=example/ref/ https://www.bcgsc.ca/downloads/genomes/9606/hg38_no_alt/bwa_0.7.6a_ind/genome/hg38_no_alt.fa 
+          wget --directory-prefix=test/ref/ https://www.bcgsc.ca/downloads/genomes/9606/hg38_no_alt/bwa_0.7.6a_ind/genome/hg38_no_alt.fa 
       - name: Download snpEff
         run: |
-          wget --directory-prefix=example/ref https://snpeff.blob.core.windows.net/databases/v5_0/snpEff_v5_0_GRCh38.99.zip
-          unzip example/ref/snpEff_v5_0_GRCh38.99.zip -d example/ref/
-          mv example/ref/data example/ref/snpeff
+          wget --directory-prefix=test/ref https://snpeff.blob.core.windows.net/databases/v5_0/snpEff_v5_0_GRCh38.99.zip
+          unzip test/ref/snpEff_v5_0_GRCh38.99.zip -d test/ref/
+          mv test/ref/data test/ref/snpeff
       - name: Run workflow
         run: | 
-          snakemake -c 1 --use-singularity --configfiles example/config/defaults.yaml example/config/parameters.yaml example/config/samples.yaml 
+          snakemake -c 1 --use-singularity --configfiles test/config/defaults.yaml test/config/parameters.yaml test/config/samples.yaml 
       - name: Check output
         run: |
           ls -lt output/exampleSample/

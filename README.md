@@ -233,7 +233,7 @@ Columns only included if optional input is included:
 
 # Example Figures
 
-Several figures are automatically generate based on the optional inputs. They can be found in `output/{sample}/figures`. The main figure is `karyogram.pdf` which show co-locationzation of ASE genes with allelic methylation and somatic copy number alteration. Example figures can be found [here](https://github.com/bcgsc/IMPALA/blob/master/example_figures/exampleFigure.md). 
+Several figures are automatically generate based on the optional inputs. They can be found in `output/{sample}/figures`. The main figure is `karyogram.pdf` which show co-locationzation of ASE genes with allelic methylation and somatic copy number alteration. Example figures can be found [here](https://github.com/bcgsc/IMPALA/blob/master/res/exampleFigure.md). 
 
 
 # Contributors

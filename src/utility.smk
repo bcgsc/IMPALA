@@ -124,7 +124,7 @@ def checkCNV_karyogram(wildcards):
 	else:
 		return []
 
-def checkMethyl(wildcards):
+def checkMethyl_karyogram(wildcards):
 	"""
         Check and return methylation data if it is provided in config file and cancer_analysis is True, if not return empty list
         """

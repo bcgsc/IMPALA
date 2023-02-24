@@ -783,7 +783,7 @@ rule cancerFigures:
 rule karyogram:
 	input:
 		cnv = checkCNV_karyogram,
-		dmr = checkMethyl,
+		dmr = checkMethyl_karyogram,
 		ase = "output/{sample}/summaryTable.tsv",
 		centromere = config["centromere"][config["genome_name"]],
 		chromSize = "output/{sample}/3_cancer/raw/genome.length",

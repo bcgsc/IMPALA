@@ -7,7 +7,7 @@ These are example figures generated from the IMPALA workflow. Some figures will 
 ## **aseGenesDot**
 The `aseGenesDot.pdf` figure shows the MAF and padj for each phased gene. The red dots are the ASE genes. Major allele threshold is specified in `parameter.yaml` file.
 
-<img src="aseGenesDot.png" width="70%">
+<img src="aseGenesDot.png" width="50%">
 
 
 <br>
@@ -41,7 +41,7 @@ The `sankeyPlot.html` shows how many of genes made it through each filtering ste
 The `dmrContigency.pdf` and `stopVarContingency.pdf` figures show a 2x2 matrix for number of genes for each allele. It illustrates the correlation between major expression allele with the allele with methylation or stop variant. Only generated if the corrosponding optional input was included.
 
 
-<img src="dmrContingency.jpg" width="70%">
+<img src="dmrContingency.jpg" width="50%">
 
 
 <br>
@@ -50,7 +50,7 @@ The `dmrContigency.pdf` and `stopVarContingency.pdf` figures show a 2x2 matrix f
 The `cnvBar.pdf` figures shows the number of ASE and BAE genes for each CNV state. Only generated if CNV data is avalible. 
 
 
-<img src="cnvBar.jpg" width="70%">
+<img src="cnvBar.jpg" width="50%">
 
 
 <br>
@@ -59,7 +59,7 @@ The `cnvBar.pdf` figures shows the number of ASE and BAE genes for each CNV stat
 The `cancerBar.pdf`, `somaticSNVbar.pdf`,`somaticIndelBar.pdf`, `stopVarBar.pdf`, `tfbsBar.pdf` figures shows the proportion of ASE vs BAE genes that contain those genomic features. Each figure is only generated if the corrosponding optional input was included. 
 
 
-<img src="stopVarBar.jpg" width="70%">
+<img src="stopVarBar.jpg" width="50%">
 
 
 <br>
@@ -67,4 +67,4 @@ The `cancerBar.pdf`, `somaticSNVbar.pdf`,`somaticIndelBar.pdf`, `stopVarBar.pdf`
 ## **ASE cause** 
 The `aseCause.pdf` and `cancerCause.pdf` figures show the number of ASE genes (and ASE cancer genes) that can be explained by CNV, allelic methylation, TFBS mutation, stop variant or somatic mutation. The bars depend on if the optional input was included.
 
-<img src="aseCause.jpg" width="70%">
+<img src="aseCause.jpg" width="50%">

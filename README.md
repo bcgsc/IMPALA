@@ -1,4 +1,4 @@
-<img src="example_figures/impala_logo.png" width="280" height="280">
+<img src="res/impala_logo.png" width="280" height="280">
 
 # Integrated Mapping and Profiling of Allelically-expressed Loci with Annotations 
 
@@ -27,7 +27,7 @@ Table of Contents
 
 
 # Overall Workflow
-<img src="example_figures/IMPALA_workflow.jpg" width=90%>
+<img src="res/IMPALA_workflow.jpg" width=90%>
 
 <br>
 

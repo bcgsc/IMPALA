@@ -73,10 +73,9 @@ git clone https://github.com/bcgsc/IMPALA.git
 
 # Running Workflow
 
-## Edit the config files
-<br />
+### **Edit the config files**
 
-### **Example parameters.yaml:** <br />
+#### **Example parameters.yaml:** <br />
 Config files to specify parameters and paths needed for the workflow. The main parameter to include is the genome name, path to expression matrix, major allele frequency threshold and threads as well as settings for using phased vcf and doing cancer analysis.
 ```
 # genome_name should match bams
@@ -118,7 +117,7 @@ starReferencePath:
 rsemReferencePath:
     /path/to/rsem/ref
 ```
-### **Example samples.yaml:** <br />
+#### **Example samples.yaml:** <br />
 Main config file to specify input files. For input method 1 using R1 and R2 fastq file, use `R1` and `R2` tag. For input method 2 using RNA bam file, use  `rna` tag. All other tags are optional.
 
 ```
@@ -149,7 +148,7 @@ samples:
 ```
 
 
-### **Example defaults.yaml:** <br />
+#### **Example defaults.yaml:** <br />
 Config file for specify path for reference genome, annotation bed file and centromere bed file. Annotation and centromere bed file for hg38 are included in the repository.
 
 ```
@@ -180,7 +179,7 @@ centromere:
 
 
 
-## **Run snakemake**
+### **Run snakemake**
 This is the command to run it with singularity. The `-c` parameter can be used to specify maximum number of threads. The `-B` parameter is used to speceify paths for the docker container to bind. 
 
 ```
@@ -229,7 +228,7 @@ Columns only included if optional input is included:
 <sup>2</sup> Allelic methylation 
 <sup>3</sup> Phased vcf 
 <sup>4</sup> Somatic SNV and Indel
-<sup>5</sup> Tissue type is specified
+<sup>5</sup> Tissue type
 
 # Example Figures
 

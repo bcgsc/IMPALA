@@ -183,7 +183,7 @@ rule rsemExpressionMatrix:
 	log: "output/{sample}/log/rsemExpressionMatrix.log"
 	shell:
 		"""
-		Rscript scripts/generateExpressionMatrix.R \
+		Rscript src/generateExpressionMatrix.R \
 			-i {input} \
 			-o output/{wildcards.sample}/0_alignment \
 			-a {params.annotation} \
@@ -373,7 +373,7 @@ if phased:
 		container: "docker://glenn032787/ase_rcontainer:2.0"
     		shell:
         		"""
-				Rscript scripts/mbased.snpEff.R \
+				Rscript src/mbased.snpEff.R \
 					--threads={threads} \
 					--phase={input.phase} \
 					--rna={input.tsv} \
@@ -390,7 +390,7 @@ else:
 			log: "output/{sample}/log/mbased.log"
 			shell:
 				"""
-				Rscript scripts/mbased.snpEff.R \
+				Rscript src/mbased.snpEff.R \
 						--threads={threads} \
 						--rna={input.tsv} \
 						--outdir=output/{wildcards.sample}/2_mBASED &> {log}
@@ -408,7 +408,7 @@ rule addExpression:
 	log: "output/{sample}/log/addExpression.log"
 	shell:
 		"""
-		Rscript scripts/addExpression.R \
+		Rscript src/addExpression.R \
 			--mbased={input.rds} \
 			--sample={wildcards.sample} \
 			--rpkm={input.rpkm} \
@@ -432,7 +432,7 @@ rule figures:
 		"""
 		mkdir -p output/{wildcards.sample}/figures
 
-		Rscript scripts/figures.R \
+		Rscript src/figures.R \
 			--mbased={input.txt} \
 			--rpkm={input.rpkm} \
 			--gene={input.bed} \
@@ -498,7 +498,7 @@ rule cnv_preprocess:
 	log: "output/{sample}/log/cnv_preprocess.log"
 	shell:
 		"""
-		Rscript scripts/cnv_preprocess.R \
+		Rscript src/cnv_preprocess.R \
 			--cnv={input} \
 			--tumorContent={params.tumor} \
 			--outdir=output/{wildcards.sample}/3_cancer/raw &> {log}
@@ -529,7 +529,7 @@ rule dmr_preprocess:
         log: "output/{sample}/log/dmr_preprocess.log"
         shell:
                 """
-                Rscript scripts/methyl_preprocess.R \
+                Rscript src/methyl_preprocess.R \
                         --methyl={input} \
                         --outdir=output/{wildcards.sample}/3_cancer/raw &> {log}
                 """
@@ -615,7 +615,7 @@ rule compareTFBS:
 	log: "output/{sample}/log/compareTFBS.log"
 	shell:
 		"""
-		Rscript scripts/compareTFBS.R \
+		Rscript src/compareTFBS.R \
 			--allele1={input.a1} \
 			--allele2={input.a2} \
 			--expression_matrix={input.expression_matrix} \
@@ -659,7 +659,7 @@ rule oneLine:
 	log: "output/{sample}/log/oneLine.log"
 	shell:
 		"""
-		cat {input} | scripts/vcfEffOnePerLine.pl > {output} 2> {log}
+		cat {input} | src/vcfEffOnePerLine.pl > {output} 2> {log}
 		"""
 
 rule snpSiftPhase:
@@ -683,7 +683,7 @@ rule getStopMutation:
 	log: "output/{sample}/log/getStopMutation.log"
 	shell:
 		"""
-		Rscript scripts/stopVariant.R \
+		Rscript src/stopVariant.R \
 			--annotation={input} \
 			--outdir=output/{wildcards.sample}/3_cancer/stopVar &> {log}
 		"""	
@@ -742,7 +742,7 @@ rule summaryTableCancer:
 	log: "output/{sample}/log/summaryTable.log"
 	shell:
 		"""
-		Rscript scripts/summaryTable.R \
+		Rscript src/summaryTable.R \
 			--cnv={input.cnv} \
 			--methyl={input.methyl} \
 			--tfbs={input.tfbs} \
@@ -771,7 +771,7 @@ rule cancerFigures:
 		"""
 		mkdir -p output/{wildcards.sample}/figures/tables
 	
-		Rscript scripts/cancerFigures.R \
+		Rscript src/cancerFigures.R \
 			--summary={input} \
 			--outdir=output/{wildcards.sample}/figures \
 			--sample={wildcards.sample} &> {log}
@@ -794,7 +794,7 @@ rule karyogram:
 	log: "output/{sample}/log/karyogram.log"
 	shell:
 		"""
-		Rscript scripts/karyogramFigure.R \
+		Rscript src/karyogramFigure.R \
         		--chromSize={input.chromSize} \
         		--centPos={input.centromere} \
         		--cna={input.cnv} \

@@ -1,5 +1,0 @@
-## genome
-genome:
-    hg38:
-        "example/ref/hg38_no_alt.fa"
-

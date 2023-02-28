@@ -2,13 +2,13 @@
 samples:
     exampleSample:
         rna:
-            example/input/rnaReadAlignment.bam
+            test/input/rnaReadAlignment.bam
         phase:
-            example/input/phased.vcf.gz
+            test/input/phased.vcf.gz
         cnv:
-            example/input/cna.txt
+            test/input/cna.txt
         methyl:
-            example/input/methyl.bed.gz
+            test/input/methyl.bed.gz
         tumorContent:
             0.8
         

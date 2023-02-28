@@ -4,7 +4,7 @@
 genome_name: "hg38"
 
 # RPKM matrix of the samples
-matrix:  example/input/expression_matrix.tsv
+matrix:  test/input/expression_matrix.tsv
 
 
 # Threads for STAR, RSEM, Strelka and MBASED  
@@ -24,7 +24,7 @@ annotationPath:
     snpEff_config:
         "/usr/local/share/snpeff-5.0-1/snpEff.config"
     snpEff_datadir:
-        "$(pwd)/example/ref/snpeff/"
+        "$(pwd)/test/ref/snpeff/"
     snpEff_genomeName:
         "GRCh38.99"
     snpEff_javaHeap:

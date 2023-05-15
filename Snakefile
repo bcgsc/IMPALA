@@ -538,7 +538,7 @@ rule dmr_preprocess:
 rule methylIntersect:
 	input: 
 		methyl = "output/{sample}/3_cancer/raw/methyl.bed",
-		gene = "output/{sample}/3_cancer/raw/gene_annotation.bed"
+		gene = "output/{sample}/3_cancer/raw/promoter_annotation.bed"
 	output: "output/{sample}/3_cancer/intersect/methyl_intersect.bed"
 	container: "docker://quay.io/biocontainers/bedtools:2.23.0--h5b5514e_6"
 	log: "output/{sample}/log/methylIntersect.log"

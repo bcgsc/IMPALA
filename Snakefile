@@ -738,7 +738,8 @@ rule summaryTableCancer:
 	params:
 		cancer=checkCancerAnalysis,
 		normal="annotation/phaserNormalASE.tsv",
-		tissue=checkTissue
+		tissue=checkTissue,
+		tumorContent=getTumorContent
 	log: "output/{sample}/log/summaryTable.log"
 	shell:
 		"""
@@ -753,6 +754,7 @@ rule summaryTableCancer:
 			--sample={wildcards.sample} \
 			--cancer={params.cancer} \
 			--tissue={params.tissue} \
+			--tumorContent={params.tumorContent} \
 			--normal={params.normal} \
 			--outdir=output/{wildcards.sample} 2> {log}
 		"""

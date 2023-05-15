@@ -106,6 +106,24 @@ if ("cnv_state" %in% column) {
 if ("methyl_state" %in% column) {
   print("Creating DMR figures...")
   
+  if ("cnv_state" %in% column) {
+  dmr <- summary_table %>%
+    dplyr::filter(!is.na(methyl_state)) %>%
+    dplyr::filter(cnv_state == "balance") %>%
+    dplyr::filter(aseResults == "ASE") %>%
+    dplyr::mutate(methylation = case_when(
+      methyl_state < 0 ~ "allele2Methyl",
+      TRUE ~ "allele1Methyl"
+    )) %>%
+    dplyr::mutate(expression = case_when(
+      allele1IsMajor ~ "alelle1Expression",
+      TRUE ~ "alelle2Expression"
+    )) %>%
+    dplyr::select(methylation, expression) %>%
+    group_by(methylation, expression) %>%
+    summarize(n=n())
+
+  } else { 
   dmr <- summary_table %>%
     dplyr::filter(!is.na(methyl_state)) %>%
     dplyr::filter(aseResults == "ASE") %>%
@@ -120,7 +138,7 @@ if ("methyl_state" %in% column) {
     dplyr::select(methylation, expression) %>%
     group_by(methylation, expression) %>%
     summarize(n=n())
-    
+  } 
   
   dmr_contigency <- ggplot(data =  dmr, mapping = aes(x = methylation, y = expression)) +
     geom_tile(aes(fill = n), colour = "white") +

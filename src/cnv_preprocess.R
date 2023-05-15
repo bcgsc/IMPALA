@@ -7,7 +7,7 @@ option_list = list(
               help="CNV file (from Ploidetect)", metavar="character"),
   make_option(c("-o", "--outdir"), type="character", default = "mBASED",
               help="Output directory name", metavar="character"),
-  make_option(c("-t", "--tumorContent"), type="integer", default = 1,
+  make_option(c("-t", "--tumorContent"), type="double", default = 1.0,
               help="Tumor Content (0.0-1.0)", metavar="character")
   
 )

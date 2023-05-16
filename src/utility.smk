@@ -105,10 +105,10 @@ def checkTissue(wildcards):
 	"""
 	Return tissue type if avalible and if cancer_analysis is True, else return empty list
 	"""
-	if config['cancer_analysis'] and "tissue" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["tissue"] != None and config["samples"][wildcards.sample]["tissue"] in possibleTissue:
-		return config["samples"][wildcards.sample]["tissue"]
+	if config['cancer_analysis'] and "tissueType" in config["samples"][wildcards.sample] and config["samples"][wildcards.sample]["tissueType"] != None and config["samples"][wildcards.sample]["tissueType"] in possibleTissue:
+		return config["samples"][wildcards.sample]["tissueType"]
 	else:
-		return []
+		return "allTissue"
 
 
 ######################

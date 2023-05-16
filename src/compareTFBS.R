@@ -1,6 +1,3 @@
-#!/gsc/software/linux-x86_64-centos7/R-4.1.3/bin/Rscript --vanilla
-.libPaths("/home/glchang/R/x86_64-pc-linux-gnu-library/4.1")
-
 suppressMessages(library(optparse))
 suppressMessages(library(tidyverse))
 

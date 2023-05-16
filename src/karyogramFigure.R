@@ -209,7 +209,7 @@ if (!is.null(opt$dmr) & opt$dmr != "" & !is.null(opt$cna) & opt$cna != ""){
               fill = "#ae2012", size = 0.25) +
     # centromeres
     geom_point(data = centPos %>% filter(chr %in% paste0("chr", 1:12)), aes(x = chr, y = centre), 
-               size = 5, colour = "black") +
+               size = 5, colour = "gray") +
     # legend bars
     geom_rect(data = adL, 
               aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill),
@@ -300,7 +300,7 @@ if (!is.null(opt$dmr) & opt$dmr != "" & !is.null(opt$cna) & opt$cna != ""){
               fill = "#005f73", size = 0.25) +
     # centromeres
     geom_point(data = centPos %>% filter(chr %in% paste0("chr", 1:12)), aes(x = chr, y = centre), 
-               size = 5, colour = "black") +
+               size = 5, colour = "gray") +
     # legend bars
     geom_rect(data = adL, 
               aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill),

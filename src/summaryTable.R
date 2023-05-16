@@ -50,7 +50,6 @@ normal_path <- opt$normal
 
 tissue <- opt$tissue
 tumorContent <- opt$tumorContent
-
 ase <- read.delim(opt$ase, header = T, comment.char = "#", stringsAsFactors = F)
 
 ##########
@@ -80,6 +79,7 @@ if (is.null(cnv_path) | cnv_path == "") {
       TRUE ~ "imbalance"
     )) %>%
     left_join(normal, by = "gene") %>%
+    dplyr::mutate(normalMAF = as.numeric(normalMAF)) %>%
     dplyr::mutate(expectedMAF = ((pmax(cnv.A,cnv.B)/(cnv.A + cnv.B))*tumorContent) + ((1-tumorContent) * normalMAF)) %>%
     dplyr::select("gene", "cnv.A", "cnv.B", "expectedMAF")
 }

@@ -33,6 +33,7 @@ if ("cnv_state" %in% column) {
   print("Creating CNV figure...")
   cnvBar <- summary_table %>%
     dplyr::filter(!is.na(cnv_state)) %>%
+    dplyr::filter(padj <= 0.05) %>%
     ggplot(aes(cnv_state)) + 
     geom_bar(aes(fill = aseResults), position = "dodge") +
     ggtitle(paste0("Gene frequency in each copy number variant state"), 
@@ -54,6 +55,7 @@ if ("cnv_state" %in% column) {
   
   expectMAF <- summary_table %>%
     dplyr::filter(!is.na(cnv_state)) %>%
+    dplyr::filter(padj <= 0.05) %>%
     dplyr::mutate(cnvRatioDiff = majorAlleleFrequency - expectedMAF) %>%
     ggplot(aes(cnvRatioDiff, padj)) + 
     geom_point(aes(colour = cnv_state)) +

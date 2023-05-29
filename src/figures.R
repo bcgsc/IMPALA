@@ -79,7 +79,7 @@ df$chr <- all_genes$V1[match(df$gene, all_genes$V4)]
 df$colour_filt <- factor(df$colour_filt, levels = c(mafG_padjL, mafL_padjL, 
                                                     mafG_padjG, mafL_padjG))
 df$chr <- factor(df$chr, levels = c(paste0("chr", 1:22), "chrX"))
-df <- df[complete.cases(df),]
+#df <- df[!is.na(df$chr),]
 
 print("Beginning figures ...")
 
@@ -104,8 +104,8 @@ ggsave(filename = paste0(out, "/aseGenesDot.pdf"), plot = dotplot, width = 5, he
 ####
 #### BARPLOT
 ####
-
-barplot <- ggplot(df, aes(x = chr, fill = colour_filt)) +
+df_chr <- df[!is.na(df$chr),]
+barplot <- ggplot(df_chr, aes(x = chr, fill = colour_filt)) +
   geom_bar() +
   scale_fill_manual(values = rev(c("#e0f0ea","#574f7d", "#95adbe", "#e74645"))) +
   theme_bw() +
@@ -145,7 +145,6 @@ links <- data.frame(
            paste0("ASE Genes (n=", d[1], ")"), paste0("Biallelic Genes (n=", d[2], ")")), 
   value=c(b, c, d)
 )
-
 
 # create a node data frame: it lists every entities involved in the flow
 nodes <- data.frame(

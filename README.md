@@ -1,7 +1,7 @@
 <img src="res/impala_logo.png" width="280" height="280">
 
 # Integrated Mapping and Profiling of Allelically-expressed Loci with Annotations 
-
+[![DOI](https://zenodo.org/badge/590257376.svg)](https://zenodo.org/badge/latestdoi/590257376)
 [![example workflow](https://github.com/bcgsc/IMPALA/actions/workflows/run_snakemake.yaml/badge.svg)](https://github.com/bcgsc/IMPALA/actions/workflows/run_snakemake.yaml)
 [![Snakemake](https://img.shields.io/badge/snakemake-≥5.6.0-brightgreen.svg?style=flat)](https://snakemake.readthedocs.io)
 

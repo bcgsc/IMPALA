@@ -116,9 +116,11 @@ if (!is.null(opt$phase)){
   # add genotype from the SAMPLE column as a new column
   info2 <- strsplit(wh$SAMPLE, ":")
   wh$GT <- list_n_item(info2, 1)
+  wh$phaseBlock <- list_n_item(info2, 5)
   
   # Add the genotype from WhatsHap 
   rna_filt$GT <- wh$GT[match(rna_filt$variant, wh$variant)]
+  rna_filt$phaseBlock <- wh$phaseBlock[match(rna_filt$variant, wh$variant)]
   
   # Find unphased genes with one variant (test)
   singleUnphased <- rna_filt %>%
@@ -139,6 +141,18 @@ if (!is.null(opt$phase)){
   
   # phased only variants
   rna_phased <- rna_filt[complete.cases(rna_filt),]
+  
+  # Get phase block ID with most phased gene body variant 
+  # (Used to account for phase blocks that occur in the middle of gene body)
+  phaseBlockID <- rna_phased %>%
+    group_by(gene, phaseBlock) %>%
+    summarize(n=n()) %>%
+    group_by(gene) %>%
+    top_n(1, n) %>%
+    pull(phaseBlock)
+    
+  rna_phased <- rna_phased %>%
+    dplyr::filter(phaseBlock %in% phaseBlockID)
   
   # make SNV IDs
   rna_phased <- rna_phased %>%

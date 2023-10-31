@@ -30,7 +30,7 @@ sample <- opt$sample
 ## GET EXPRESSED TF
 expressionMatrix <- read_delim(opt$expression_matrix, delim = "\t")
 transcriptionFactor <- read_delim(opt$tf, delim = "\t") %>%
-  separate(Transcription.factor, sep = ":", into=c("human", "transcriptionFactor")) %>%
+  separate(TranscriptionFactor, sep = ":", into=c("human", "transcriptionFactor")) %>%
   dplyr::select(-human)
 
 expressionMatrix <- expressionMatrix[,c("gene", sample)]

@@ -28,7 +28,7 @@ outdir <- opt$outdir
 sample <- opt$sample
 
 ## GET EXPRESSED TF
-expressionMatrix <- read.delim(opt$expression_matrix, sep = "\t", header = T)
+expressionMatrix <- read_delim(opt$expression_matrix, delim = "\t")
 transcriptionFactor <- read.delim(opt$tf, sep = "\t", header = T) %>%
   separate(Transcription.factor, sep = ":", into=c("human", "transcriptionFactor")) %>%
   dplyr::select(-human)
